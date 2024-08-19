@@ -279,6 +279,9 @@ MonoBehaviour:
   DoubleJumpHeightMult: 1.2
   EarlyReleaseJumpDecay: 2
   SlowDecentMultiplier: 0.97
+  SprintCameraOffsetMultiplier: 1.3
+  DashCameraOffsetMultiplier: 1.5
+  TimeBeforeIdle: 2
   LookingDirection: {x: 0, y: 0}
 --- !u!70 &435508773
 CapsuleCollider2D:
@@ -493,7 +496,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FollowingOffset: {x: 2, y: 3}
   FollowingObject: {fileID: 435508770}
-  SpeedDivider: 100
+  SpeedDivider: 200
 --- !u!1 &1144539432
 GameObject:
   m_ObjectHideFlags: 0

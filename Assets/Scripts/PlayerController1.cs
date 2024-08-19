@@ -1,3 +1,4 @@
+using System;
 using System.Linq.Expressions;
 using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
@@ -47,11 +48,19 @@ public class PlayerPhysicsController : MonoBehaviour
     [SerializeField] float EarlyReleaseJumpDecay = 2f;
     [Tooltip("If holding space while falling, you fall this much slower (Multiplication Factor, 1 is normal speed, 0 is no fall)")]
     [SerializeField] float SlowDecentMultiplier = 0.95f;
+    [SerializeField] float SprintCameraOffsetMultiplier = 1.3f;
+    [SerializeField] float DashCameraOffsetMultiplier = 1.5f;
+    [SerializeField] float TimeBeforeIdle = 2f;
+
     int JumpsLeft = 0;
     bool SpaceNotLetGoOf = false;
     float MovementSpeedMultiplier = 0;
     float DashLeft = 0;
     float DashCDLeft = 0;
+    float IdleTimeLeft = 0;
+    bool IsSprinting = false;
+    bool IsDashing = false;
+    bool IsIdle = true;
     public Vector2 LookingDirection = Vector2.right;
     Vector2 RespawnLocation = new Vector2(-5.84f, -3f); // SpawnLocation
 
@@ -78,6 +87,7 @@ public class PlayerPhysicsController : MonoBehaviour
         UpdateJump();
     }
 
+
     /// <summary>
     /// Moves the player based on input and the direction of the camera
     /// </summary>
@@ -87,11 +97,13 @@ public class PlayerPhysicsController : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftShift))
         {
             MovementSpeedMultiplier = SprintMult;
+            IsSprinting = true;
         }
         else
         {
             //RESETS TO 1 REGARDLESS OF OTHER MULTIPLIERS GIVEN TO MOVEMENT SPEED. FIX THIS
             MovementSpeedMultiplier = 1;
+            IsSprinting = false;
         }
         
         // Collect input in a vector to see which keys the player is holding down this frame.
@@ -124,7 +136,19 @@ public class PlayerPhysicsController : MonoBehaviour
             RefRigidbody.velocity *= DampingCoefficient * Time.deltaTime;
             RefRigidbody.velocity = new Vector2(RefRigidbody.velocity.x, verticalComponent);
         }
-        
+        if (RefRigidbody.velocity.magnitude <= 0.1f)
+        {
+            IdleTimeLeft -= Time.deltaTime;
+            if (IdleTimeLeft <= 0 && IsIdle == false)
+            {
+                IsIdle = true;
+            }
+        }
+        else
+        {
+            if (IsIdle != false) IsIdle = false;
+            IdleTimeLeft = TimeBeforeIdle;
+        }
     }
 
     /// <summary>
@@ -185,12 +209,17 @@ public class PlayerPhysicsController : MonoBehaviour
         {
             DashLeft = DashIntensity;
             DashCDLeft = DashCooldown;
+            IsDashing = true;
         }
         if (DashLeft > 0)
         {
             RefRigidbody.velocity = new Vector2(RefRigidbody.velocity.normalized.x * MoveForce * DashLeft, RefRigidbody.velocity.y);
             DashLeft -= DashIntensity * Time.deltaTime * DashDecayRate;
-            if (DashLeft < 1) DashLeft = 0;
+            if (DashLeft < 1)
+            {
+                DashLeft = 0;
+                IsDashing = false;
+            }
         }
         if (DashCDLeft > 0)
         {
@@ -211,5 +240,19 @@ public class PlayerPhysicsController : MonoBehaviour
         bool bCloseToGround = hitInfo.distance < GroundedGraceDistance;
         bool bIsFalling = RefRigidbody.velocity.y <= 0;
         return bCloseToGround && bIsFalling;
+    }
+    public float CalculateCameraMultiplierX()
+    {
+        float multiplier = 1f;
+        if (IsSprinting) multiplier *= SprintCameraOffsetMultiplier;
+        if (IsDashing) multiplier *= DashCameraOffsetMultiplier;
+        if (IsIdle) multiplier *= 0;
+        return multiplier;
+    }
+    public float CalculateCameraMultiplierY()
+    {
+        float multiplier = 1f;
+
+        return multiplier;
     }
 }

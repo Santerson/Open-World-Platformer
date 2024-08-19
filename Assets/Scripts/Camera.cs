@@ -28,13 +28,16 @@ public class Camera : MonoBehaviour
     private void CalculateTargetPos()
     {
         if (FollowingObject == null) { return; }
+        float PlayerImposedOffsetMultiplierX = FindObjectOfType<PlayerPhysicsController>().CalculateCameraMultiplierX();
         Vector2 followingTargetPos = FollowingObject.transform.position;
         float invertFollowing = 1;
         if (FindObjectOfType<PlayerPhysicsController>().LookingDirection == Vector2.left)
         {
             invertFollowing *= -1;
         }
-        TargetPos = new Vector2(followingTargetPos.x + FollowingOffset.x * invertFollowing, followingTargetPos.y + FollowingOffset.y);
+        float xCameraOffset = followingTargetPos.x + FollowingOffset.x * invertFollowing * PlayerImposedOffsetMultiplierX;
+        float yCameraOffset = followingTargetPos.y + FollowingOffset.y;
+        TargetPos = new Vector2(xCameraOffset, yCameraOffset);
         Debug.DrawLine(followingTargetPos, TargetPos, Color.red);
     }
 
