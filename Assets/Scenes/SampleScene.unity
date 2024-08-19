@@ -267,7 +267,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MoveForce: 4
   MaxVelocity: 5
-  SprintMult: 1.2
+  SprintMult: 2
+  DashIntensity: 5
+  DashDecayRate: 2
+  DashCooldown: 1
   DampingCoefficient: 0.97
   KeyBindJump: 32
   ExtraJumpCount: 1
@@ -276,6 +279,7 @@ MonoBehaviour:
   DoubleJumpHeightMult: 1.2
   EarlyReleaseJumpDecay: 2
   SlowDecentMultiplier: 0.97
+  LookingDirection: {x: 0, y: 0}
 --- !u!70 &435508773
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -376,6 +380,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 519420032}
   - {fileID: 364989076}
   - {fileID: 1286177190}
   - {fileID: 1144539433}
@@ -392,6 +397,7 @@ GameObject:
   - component: {fileID: 519420032}
   - component: {fileID: 519420031}
   - component: {fileID: 519420029}
+  - component: {fileID: 519420033}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -467,12 +473,27 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: -0.49305326, y: 1.1033902, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 435508775}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &519420033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4aec0f7c45fc14843b85edd616cb7aab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  FollowingOffset: {x: 2, y: 3}
+  FollowingObject: {fileID: 435508770}
+  SpeedDivider: 100
 --- !u!1 &1144539432
 GameObject:
   m_ObjectHideFlags: 0
@@ -775,6 +796,5 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 519420032}
   - {fileID: 435508775}
   - {fileID: 2007409288}

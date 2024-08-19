@@ -14,6 +14,9 @@ public class PlayerPhysicsController : MonoBehaviour
     [Tooltip("The player's max movement speed")]
     [SerializeField] float MaxVelocity = 6.0f;
     [SerializeField] float SprintMult = 1.2f;
+    [SerializeField] float DashIntensity = 10f;
+    [SerializeField] float DashDecayRate = 2f;
+    [SerializeField] float DashCooldown = 1f;
     /// <summary>
     /// The speed at which the player slows down after releasing movement buttons (should be <1, over 1 will accelerate the player)
     /// </summary>
@@ -47,8 +50,10 @@ public class PlayerPhysicsController : MonoBehaviour
     int JumpsLeft = 0;
     bool SpaceNotLetGoOf = false;
     float MovementSpeedMultiplier = 0;
+    float DashLeft = 0;
+    float DashCDLeft = 0;
+    public Vector2 LookingDirection = Vector2.right;
     Vector2 RespawnLocation = new Vector2(-5.84f, -3f); // SpawnLocation
-
 
     void Awake()
     {
@@ -69,6 +74,7 @@ public class PlayerPhysicsController : MonoBehaviour
     void Update()
     {
         UpdateMovement();
+        CheckDash();
         UpdateJump();
     }
 
@@ -87,16 +93,22 @@ public class PlayerPhysicsController : MonoBehaviour
             //RESETS TO 1 REGARDLESS OF OTHER MULTIPLIERS GIVEN TO MOVEMENT SPEED. FIX THIS
             MovementSpeedMultiplier = 1;
         }
-
+        
         // Collect input in a vector to see which keys the player is holding down this frame.
         Vector2 inputVector = Vector2.zero;
-        if (Input.GetKey(KeyCode.A)) { inputVector.x -= 1; } //Left
-        if (Input.GetKey(KeyCode.D)) { inputVector.x += 1; } //Right
+        if (Input.GetKey(KeyCode.A)) { 
+            inputVector.x -= 1; //Left
+            LookingDirection = Vector2.left;
+        } 
+        if (Input.GetKey(KeyCode.D)) {
+            inputVector.x += 1; //Right
+            LookingDirection = Vector2.right;
+        } 
         inputVector.Normalize();
         // Accelerate the player using our max allowed move force.
         RefRigidbody.AddForce(inputVector * MoveForce * MovementSpeedMultiplier * (Time.deltaTime * 600));
         // Clamp the maximum velocity to our defined cap.
-        if ((RefRigidbody.velocity.magnitude - Mathf.Abs(RefRigidbody.velocity.y)) > MaxVelocity * MovementSpeedMultiplier)
+        if ((RefRigidbody.velocity.magnitude - Mathf.Abs(RefRigidbody.velocity.y)) > MaxVelocity * MovementSpeedMultiplier + DashLeft)
         {
             // Maintain the current direction by using the normalized velocity vector
             float ySpeed = RefRigidbody.velocity.y;
@@ -165,6 +177,29 @@ public class PlayerPhysicsController : MonoBehaviour
             RefRigidbody.velocity = new Vector2(RefRigidbody.velocity.x, RefRigidbody.velocity.y * SlowDecentMultiplier);
         }
 
+    }
+
+    private void CheckDash()
+    {
+        if (Input.GetKeyDown(KeyCode.C) && DashCDLeft == 0)
+        {
+            DashLeft = DashIntensity;
+            DashCDLeft = DashCooldown;
+        }
+        if (DashLeft > 0)
+        {
+            RefRigidbody.velocity = new Vector2(RefRigidbody.velocity.normalized.x * MoveForce * DashLeft, RefRigidbody.velocity.y);
+            DashLeft -= DashIntensity * Time.deltaTime * DashDecayRate;
+            if (DashLeft < 1) DashLeft = 0;
+        }
+        if (DashCDLeft > 0)
+        {
+            DashCDLeft -= Time.deltaTime;
+        }
+        if (DashCDLeft < 0)
+        {
+            DashCDLeft = 0;
+        }
     }
 
     /// <summary>
