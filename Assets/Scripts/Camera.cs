@@ -29,6 +29,7 @@ public class Camera : MonoBehaviour
     {
         if (FollowingObject == null) { return; }
         float PlayerImposedOffsetMultiplierX = FindObjectOfType<PlayerPhysicsController>().CalculateCameraMultiplierX();
+        float PlayerImposedOffsetMultiplierY = FindObjectOfType<PlayerPhysicsController>().CalculateCameraMultiplierY();
         Vector2 followingTargetPos = FollowingObject.transform.position;
         float invertFollowing = 1;
         if (FindObjectOfType<PlayerPhysicsController>().LookingDirection == Vector2.left)
@@ -36,7 +37,7 @@ public class Camera : MonoBehaviour
             invertFollowing *= -1;
         }
         float xCameraOffset = followingTargetPos.x + FollowingOffset.x * invertFollowing * PlayerImposedOffsetMultiplierX;
-        float yCameraOffset = followingTargetPos.y + FollowingOffset.y;
+        float yCameraOffset = followingTargetPos.y + FollowingOffset.y * PlayerImposedOffsetMultiplierY;
         TargetPos = new Vector2(xCameraOffset, yCameraOffset);
         Debug.DrawLine(followingTargetPos, TargetPos, Color.red);
     }
@@ -45,6 +46,8 @@ public class Camera : MonoBehaviour
     {
         Debug.DrawLine(transform.position, TargetPos, Color.yellow);
         Vector2 cameraMovement = new Vector2(TargetPos.x - transform.position.x, TargetPos.y - transform.position.y);
-        transform.position = new Vector3(transform.position.x + (cameraMovement.x / SpeedDivider), transform.position.y + (cameraMovement.y / SpeedDivider), -10);
+        float newCameraPositionX = transform.position.x + (cameraMovement.x / SpeedDivider) * Time.deltaTime * 100;
+        float newCameraPositionY = transform.position.y + (cameraMovement.y / SpeedDivider) * Time.deltaTime * 100;
+        transform.position = new Vector3(newCameraPositionX, newCameraPositionY, -10);
     }
 }

@@ -29,7 +29,7 @@ public class PlayerPhysicsController : MonoBehaviour
     [Tooltip("Hey Siri, I forgot how to jump. How do I jump?")]
     [SerializeField] KeyCode KeyBindJump = KeyCode.Space;
     Rigidbody2D RefRigidbody = null;
-    CapsuleCollider2D RefCapsule = null;
+    CapsuleCollider2D RefCollider = null;
     /// <summary>
     /// Amount of extra jumps (not including the first grounded one)
     /// </summary>
@@ -50,6 +50,9 @@ public class PlayerPhysicsController : MonoBehaviour
     [SerializeField] float SlowDecentMultiplier = 0.95f;
     [SerializeField] float SprintCameraOffsetMultiplier = 1.3f;
     [SerializeField] float DashCameraOffsetMultiplier = 1.5f;
+    [SerializeField] float CameraAscendMultiplier = 1.3f;
+    [SerializeField] float CameraDescendMultiplier = -0.1f;
+    [SerializeField] float CameraMaxDistanceFromPlayerY = 2f;
     [SerializeField] float TimeBeforeIdle = 2f;
 
     int JumpsLeft = 0;
@@ -73,10 +76,10 @@ public class PlayerPhysicsController : MonoBehaviour
         {
             Debug.LogError("The player controller needs to have a rigidbody.");
         }
-        RefCapsule = GetComponent<CapsuleCollider2D>();
-        if (RefCapsule == null)
+        RefCollider = GetComponent<CapsuleCollider2D>();
+        if (RefCollider == null)
         {
-            Debug.LogError("Player Controller could not find a CapsuleCollider");
+            Debug.LogError("Player Controller could not find a Collider");
         }
     }
     // Update is called once per frame
@@ -85,6 +88,7 @@ public class PlayerPhysicsController : MonoBehaviour
         UpdateMovement();
         CheckDash();
         UpdateJump();
+        Debug.Log(transform.position);
     }
 
 
@@ -93,6 +97,7 @@ public class PlayerPhysicsController : MonoBehaviour
     /// </summary>
     private void UpdateMovement()
     {
+        
         // Check to see if sprint keybind is being held down
         if (Input.GetKey(KeyCode.LeftShift))
         {
@@ -127,6 +132,7 @@ public class PlayerPhysicsController : MonoBehaviour
             RefRigidbody.velocity = RefRigidbody.velocity.normalized * MaxVelocity;
             RefRigidbody.velocity = new Vector2(RefRigidbody.velocity.x, ySpeed);
         }
+        
         // We know the player let go of the controls if the input vector is nearly zero.
         if (inputVector.sqrMagnitude <= 0.1f)
         {
@@ -136,6 +142,7 @@ public class PlayerPhysicsController : MonoBehaviour
             RefRigidbody.velocity *= DampingCoefficient * Time.deltaTime;
             RefRigidbody.velocity = new Vector2(RefRigidbody.velocity.x, verticalComponent);
         }
+        /*
         if (RefRigidbody.velocity.magnitude <= 0.1f)
         {
             IdleTimeLeft -= Time.deltaTime;
@@ -149,6 +156,20 @@ public class PlayerPhysicsController : MonoBehaviour
             if (IsIdle != false) IsIdle = false;
             IdleTimeLeft = TimeBeforeIdle;
         }
+        
+        float newPosition = 0;
+        if (Input.GetKey(KeyCode.D))
+        {
+            newPosition += 0.03f;
+            IsIdle = false;
+        }
+        if (Input.GetKey(KeyCode.A))
+        {
+            newPosition -= 0.03f;
+            IsIdle = false;
+        }
+        transform.position = new Vector2(transform.position.x + newPosition, transform.position.y);
+        */
     }
 
     /// <summary>
@@ -252,7 +273,16 @@ public class PlayerPhysicsController : MonoBehaviour
     public float CalculateCameraMultiplierY()
     {
         float multiplier = 1f;
-
+        float ySpeed = RefRigidbody.velocity.y;
+        //TODO: make the camera not go down if the player has jumped
+        if (ySpeed > 0f)
+        {
+            multiplier *= Mathf.Clamp(Mathf.Abs(ySpeed) / 2, 0, CameraAscendMultiplier);
+        }
+        else if (ySpeed < -0.1f)
+        {
+            multiplier *= Mathf.Clamp(CameraDescendMultiplier * Mathf.Abs(ySpeed), -CameraMaxDistanceFromPlayerY, 0);
+        }
         return multiplier;
     }
 }
