@@ -28,24 +28,37 @@ public class Camera : MonoBehaviour
     private void CalculateTargetPos()
     {
         if (FollowingObject == null) { return; }
-        float PlayerImposedOffsetMultiplierX = FindObjectOfType<PlayerPhysicsController>().CalculateCameraMultiplierX();
-        float PlayerImposedOffsetMultiplierY = FindObjectOfType<PlayerPhysicsController>().CalculateCameraMultiplierY();
+
+        //Get camera offset depending on what the player is doing
+        float PlayerImposedOffsetMultiplierX = FindObjectOfType<Player>().CalculateCameraMultiplierX();
+        float PlayerImposedOffsetMultiplierY = FindObjectOfType<Player>().CalculateCameraMultiplierY();
+
+        //Get target object position
         Vector2 followingTargetPos = FollowingObject.transform.position;
-        float invertFollowing = 1;
-        if (FindObjectOfType<PlayerPhysicsController>().LookingDirection == Vector2.left)
-        {
-            invertFollowing *= -1;
-        }
+
+        //Inverts the position of the camera if the player is looking left
+        float invertFollowing = FindObjectOfType<Player>().PlayerLookingDirection;
+        
+        //Creates a target position for the camera. A x and y position are created to be put into a Vec2 later
         float xCameraOffset = followingTargetPos.x + FollowingOffset.x * invertFollowing * PlayerImposedOffsetMultiplierX;
         float yCameraOffset = followingTargetPos.y + FollowingOffset.y * PlayerImposedOffsetMultiplierY;
+
+        //Putting the newly created targetpos into the vec2 for target position
         TargetPos = new Vector2(xCameraOffset, yCameraOffset);
+        
+        //Red line is the player to the target position
         Debug.DrawLine(followingTargetPos, TargetPos, Color.red);
     }
 
     private void MoveCameraTowardsTarget()
     {
+        //Yellow line is Camera to Target position
         Debug.DrawLine(transform.position, TargetPos, Color.yellow);
+
+        //Creates a vector2 for the line between the camera and the target position
         Vector2 cameraMovement = new Vector2(TargetPos.x - transform.position.x, TargetPos.y - transform.position.y);
+        
+        //Moves a fraction of that each frame
         float newCameraPositionX = transform.position.x + (cameraMovement.x / SpeedDivider) * Time.deltaTime * 100;
         float newCameraPositionY = transform.position.y + (cameraMovement.y / SpeedDivider) * Time.deltaTime * 100;
         transform.position = new Vector3(newCameraPositionX, newCameraPositionY, -10);

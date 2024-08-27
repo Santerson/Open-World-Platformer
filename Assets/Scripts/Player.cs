@@ -8,18 +8,25 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     //Movement
+    [Header("Movement")]
     [SerializeField] float MaxSpeed = 0.03f;
     [SerializeField] float SprintMultiplier = 1.3f;
     [SerializeField] float Acceleration = 0.1f;
     [SerializeField] float Deceleration = 0.2f;
     [SerializeField] float DistanceFromWalls = 0.05f;
+    [SerializeField] float IdleTimeoutTime = 2f;
 
     //Dashing
+    [Header("Dashing")]
     [SerializeField] float DashPower = 0.2f;
     [SerializeField] float DashLength = 100f;
+    [SerializeField] float DashMaxSpeed = 0.05f;
     [SerializeField] float DashCooldown = 1.0f;
+    [SerializeField] float DashRolloutTime = 0.5f;
+    [SerializeField] float DashRolloutDivider = 500f;
 
     //Jumping
+    [Header("Jumping")]
     [SerializeField] float JumpHeight = 1f;
     [SerializeField] float GravityIntensity;
     [SerializeField] float MaxFallSpeed = -1f;
@@ -29,19 +36,30 @@ public class Player : MonoBehaviour
     [SerializeField] float DoubleJumpPower = 1.5f;
     [SerializeField] float GroundedGraceDistance = 0.1f;
     [SerializeField] float HeadHitDistance = 0.1f;
-    
+
     //Gliding
+    [Header("Gliding")]
     [SerializeField] float GlideGravity = 100f;
     [SerializeField] float GlideTime = 2.0f;
 
     //Camera
+    [Header("Camera")]
     [SerializeField] float SprintCameraOffsetMultiplier = 1.3f;
     [SerializeField] float DashCameraOffsetMultiplier = 1.5f;
-    [SerializeField] float CameraAscendMultiplier = 1.3f;
-    [SerializeField] float CameraDescendMultiplier = -0.1f;
+    [SerializeField] float GlideCameraOffset = -1f;
     [SerializeField] float CameraMaxDistanceFromPlayerY = 2f;
+    [SerializeField] float TimeToCameraStayDownAfterGlide = 0.5f;
+    [SerializeField] float TimeToLookVertically = 0.5f;
+    [SerializeField] float LookUpCameraAddedOffset = 1.5f;
+    [SerializeField] float LookDownCameraAddedOffset = -4f;
 
     //Keybinds
+    [Header("Keybinds")]
+    [SerializeField] KeyCode LeftKey = KeyCode.A;
+    [SerializeField] KeyCode RightKey = KeyCode.D;
+    [SerializeField] KeyCode JumpKey = KeyCode.Space;
+    [SerializeField] KeyCode SprintKey = KeyCode.LeftShift;
+    [SerializeField] KeyCode DashKey = KeyCode.LeftControl;
     [SerializeField] KeyCode GlideKey = KeyCode.C;
 
     /// <summary>
@@ -49,19 +67,29 @@ public class Player : MonoBehaviour
     /// </summary>
     public float Velocity { get; private set; }
     public float Gravity { get; private set; }
-    int Direction = 1;
-    int KeyStrokeDirection = 0;
+    public int Direction { get; private set; }
+    public int KeyStrokeDirection { get; private set; }
+    public int PlayerLookingDirection { get; private set; }
     public bool IsSprinting { get; private set; }
     public bool IsDashing { get; private set; }
     public bool IsIdle { get; private set; }
     public bool IsGliding { get; private set; }
     public bool IsLanded { get;private set; }
+
+
     int JumpsLeft = 0;
     bool IsUpwardAcceleration = false;
     bool DoubleJumpReady = false;
+    bool SlowDownDash = false;
+    bool CameraStartedGliding = false;
+    bool LookingUp = false;
+    bool LookingDown = false;
     float DashLeft = 0;
     float DashCDLeft = 0;
+    float DashRolloutLeft = 0;
+    float GlideTimeLeft = 0;
     float IdleTimeLeft = 0;
+
     Rigidbody2D RefRigidbody = null;
     CapsuleCollider2D RefCollider = null;
 
@@ -84,6 +112,17 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        UpdateVariables();
+
+        UpdateMovement();
+        UpdateGravity();
+        UpdateDash();
+        UpdateIdleTimeout();
+        transform.position = new Vector2(transform.position.x + Velocity * Time.deltaTime * 300, transform.position.y + Gravity  * (Time.deltaTime * 100));
+    }
+
+    private void UpdateVariables()
+    {
         if (Velocity < 0)
         {
             Direction = -1;
@@ -93,10 +132,10 @@ public class Player : MonoBehaviour
             Direction = 1;
         }
 
-        UpdateMovement();
-        UpdateGravity();
-        UpdateDash();
-        transform.position = new Vector2(transform.position.x + Velocity * Time.deltaTime * 300, transform.position.y + Gravity  * (Time.deltaTime * 100));
+        if (KeyStrokeDirection != 0)
+        {
+            PlayerLookingDirection = KeyStrokeDirection;
+        }
     }
 
     private void UpdateMovement()
@@ -126,34 +165,6 @@ public class Player : MonoBehaviour
         //Stops player if touching a wall
         CheckIfPlayerIsTooCloseToWalls();
     }
-
-    private void UpdateDash()
-    {
-        if (Input.GetKeyDown(KeyCode.LeftControl) && Velocity != 0 && DashCDLeft <= 0) 
-        {
-            IsDashing = true;
-            DashLeft = DashPower;
-            DashCDLeft = DashCooldown;
-        }
-
-        if (IsDashing)
-        {
-            float change = DashLeft / DashLength * (Time.deltaTime * 300);
-            DashLeft -= change;
-            Velocity += change * KeyStrokeDirection;
-            if (DashLeft < 0.1f)
-            {
-                DashLeft = 0;
-                IsDashing = false;
-            }
-        }
-        
-        if (DashCDLeft > 0)
-        {
-            DashCDLeft -= Time.deltaTime;
-        }
-    }
-
     private void UpdateGravity()
     {
         //The origin of the raycast should be from the bottom of the player's capsule
@@ -162,84 +173,102 @@ public class Player : MonoBehaviour
 
         float frameDifference = Time.deltaTime * 100;
 
-        if (Input.GetKey(GlideKey))
-        {
-            IsGliding = true;
-        }
-        else
-        {
-            IsGliding = false;
-        }
-
-        if (Input.GetKeyUp(GlideKey))
-
-        if (IsGliding)
-        {
-            GlideTime -= Time.deltaTime;
-            if (GlideTime < 0)
-            {
-                IsGliding = false;
-            }
-        }
-
         //Detects if the player is on the floor and stops them from falling/gives them their jumps
         DetectFloorAndRoof(origin, direction, frameDifference);
+
+        //Glides the player if the keybind is being held
+        Glide();
 
         //Elevates the player
         JumpPlayer(frameDifference);
     }
 
-    private void JumpPlayer(float frameDifference)
+    private void UpdateDash()
     {
-
-        //Checks if the player can jump
-        if (Input.GetKeyDown(KeyCode.Space) && JumpsLeft > 0)
+        //Detects if the player is holding down the dash key and is able to dash
+        if (Input.GetKeyDown(DashKey) && Velocity != 0 && DashCDLeft <= 0) 
         {
-            //Jumps the player and reduces their jumps left
-            --JumpsLeft;
-            if (DoubleJumpReady)
+            IsDashing = true;
+            DashLeft = DashPower;
+            DashCDLeft = DashCooldown;
+        }
+
+        //Checks if the player is dashing
+        if (IsDashing)
+        {
+            //Creates a change variable which will be the distance covered this frame
+            float change = DashLeft / DashLength * (Time.deltaTime * 300);
+            //Reduces from the amount of dash left
+            //*Dash left is the total amount of 'dash' in the dash, we take part of this dash
+            //as distance traveled*
+            DashLeft -= change;
+            //Cap the speed at a max speed so sprint dashing isn't faster than normal dashing
+            if (Mathf.Abs(Velocity) < DashMaxSpeed)
             {
-                //increases jump height if the player is doing a double jump
-                Gravity = JumpHeight * DoubleJumpPower;
+                Velocity += change * KeyStrokeDirection;
             }
             else
             {
-                Gravity = JumpHeight;
-                DoubleJumpReady = true;
+                Velocity = DashMaxSpeed * KeyStrokeDirection;
             }
-            IsUpwardAcceleration = true;
+            //Stop the dash if the dash is almost =0
+            if (DashLeft < 0.1f)
+            {
+                DashLeft = 0;
+                DashRolloutLeft = DashRolloutTime;
+                SlowDownDash = true;
+                IsDashing = false;
+            }
         }
-        //Slows down the player more dramatically if they stop holding space while jumping
-        if (!Input.GetKey(KeyCode.Space) && IsUpwardAcceleration)
+        
+        //If the dash is complete, we continue to move the player a bit, slower so the stop isn't as jarring
+        if (SlowDownDash)
         {
-            Gravity -= GravityIntensity * EarlyEndJumpGravityBoost * frameDifference;
+            //Adds a small amount to the Velocity
+            Velocity += DashLength * Time.deltaTime / DashRolloutDivider * Direction;
+            //Decreases the amount of time left in the dash rollout
+            DashRolloutLeft -= Time.deltaTime;
+            if (DashRolloutLeft <= 0) 
+            {
+                
+                SlowDownDash = false;
+            }
         }
-        //Checks if the player is no longer gaining height in their jump
-        if (Gravity < 0 && IsUpwardAcceleration)
+
+        //Decreases the Dash Cooldown if the Dash is on cooldown
+        if (DashCDLeft > 0)
         {
-            IsUpwardAcceleration = false;
+            DashCDLeft -= Time.deltaTime;
         }
     }
 
     private float CalculateMovementMultiplier()
     {
+        //Create a return variable
         float sprintMultiplier;
-        if (Input.GetKey(KeyCode.LeftShift))
+        //Check if the player is sprinting
+        if (Input.GetKey(SprintKey))
         {
+            //Add sprint multiplier
             sprintMultiplier = SprintMultiplier;
+            IsSprinting = true;
         }
         else
         {
             sprintMultiplier = 1;
+            IsSprinting = false;
         }
+        /*
+         * Because of the way this is implemented, if there are any future attempts at trying to impact
+         * the player's speed, there will not be a difference unless the player is sprinting.
+         */
         return sprintMultiplier;
     }
-
     private void MovePlayer(float accelerationRate, float decelerationRate, float sprintMultiplier)
     {
 
         //Rightward movement
-        if (Input.GetKey(KeyCode.D) && Velocity < MaxSpeed * sprintMultiplier && !IsDashing)
+        if (Input.GetKey(RightKey) && Velocity < MaxSpeed * sprintMultiplier && !IsDashing)
         {
             //Checks if the player is turning around or accelerating from nothing
             if (Velocity < 0)
@@ -254,7 +283,7 @@ public class Player : MonoBehaviour
             KeyStrokeDirection = 1;
         }
         //Leftward movement
-        if (Input.GetKey(KeyCode.A) && Velocity > -MaxSpeed * sprintMultiplier && !IsDashing)
+        if (Input.GetKey(LeftKey) && Velocity > -MaxSpeed * sprintMultiplier && !IsDashing)
         {
             //Checks if the player is turning around or accelerating from nothing
             if (Velocity > 0)
@@ -269,7 +298,7 @@ public class Player : MonoBehaviour
             KeyStrokeDirection = -1;
         }
         //Checks if player is not moving or if they are moving faster than they should be
-        if ((!Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.D)) && !IsDashing)
+        if ((!Input.GetKey(LeftKey) && !Input.GetKey(RightKey) || Input.GetKey(LeftKey) && Input.GetKey(RightKey)) && !IsDashing)
         {
             //Decelerates the player depenign on which way they are moving
             if (Velocity > 0)
@@ -287,38 +316,6 @@ public class Player : MonoBehaviour
             }
             KeyStrokeDirection = 0;
         }
-    }
-
-    bool IsGrounded(RaycastHit2D hitInfo)
-    {
-        bool bCloseToGround = hitInfo.distance < GroundedGraceDistance;
-        bool bIsFalling = RefRigidbody.velocity.y <= 0;
-        return bCloseToGround && bIsFalling;
-    }
-
-    public float CalculateCameraMultiplierX()
-    {
-        float multiplier = 1f;
-        if (IsSprinting) multiplier *= SprintCameraOffsetMultiplier;
-        if (IsDashing) multiplier *= DashCameraOffsetMultiplier;
-        if (IsIdle) multiplier *= 0;
-        return multiplier;
-    }
-
-    public float CalculateCameraMultiplierY()
-    {
-        float multiplier = 1f;
-        float ySpeed = RefRigidbody.velocity.y;
-        //TODO: make the camera not go down if the player has jumped
-        if (ySpeed > 0f)
-        {
-            multiplier *= Mathf.Clamp(Mathf.Abs(ySpeed) / 2, 0, CameraAscendMultiplier);
-        }
-        else if (ySpeed < -0.1f)
-        {
-            multiplier *= Mathf.Clamp(CameraDescendMultiplier * Mathf.Abs(ySpeed), -CameraMaxDistanceFromPlayerY, 0);
-        }
-        return multiplier;
     }
 
     private void DetectFloorAndRoof(Vector2 origin, Vector2 direction, float frameDifference)
@@ -359,7 +356,7 @@ public class Player : MonoBehaviour
             {
                 if (IsGliding && !IsUpwardAcceleration)
                 {
-                    Gravity = GlideGravity;
+                    Gravity = 0 - GlideGravity;
                 }
                 else
                 {
@@ -394,5 +391,126 @@ public class Player : MonoBehaviour
         {
             Velocity = 0;
         }
+    }
+
+    private void JumpPlayer(float frameDifference)
+    {
+
+        //Checks if the player can jump
+        if (Input.GetKeyDown(JumpKey) && JumpsLeft > 0)
+        {
+            //Jumps the player and reduces their jumps left
+            --JumpsLeft;
+            if (DoubleJumpReady)
+            {
+                //increases jump height if the player is doing a double jump
+                Gravity = JumpHeight * DoubleJumpPower;
+            }
+            else
+            {
+                Gravity = JumpHeight;
+                DoubleJumpReady = true;
+            }
+            IsUpwardAcceleration = true;
+        }
+        //Slows down the player more dramatically if they stop holding space while jumping
+        if (!Input.GetKey(JumpKey) && IsUpwardAcceleration)
+        {
+            Gravity -= GravityIntensity * EarlyEndJumpGravityBoost * frameDifference;
+        }
+        //Checks if the player is no longer gaining height in their jump
+        if (Gravity < 0 && IsUpwardAcceleration)
+        {
+            IsUpwardAcceleration = false;
+        }
+    }
+
+    private void Glide()
+    {
+        if (Input.GetKey(GlideKey) && !IsLanded && GlideTimeLeft > 0)
+        {
+            IsGliding = true;
+        }
+        else
+        {
+            IsGliding = false;
+        }
+
+        if (Input.GetKeyUp(GlideKey))
+        {
+            GlideTimeLeft = 0;
+        }
+
+        if (IsGliding)
+        {
+            GlideTimeLeft -= Time.deltaTime;
+            if (GlideTimeLeft < 0)
+            {
+                IsGliding = false;
+            }
+        }
+
+        if (IsLanded)
+        {
+            GlideTimeLeft = GlideTime;
+            CameraStartedGliding = false;
+        }
+
+        if (GlideTime - GlideTimeLeft > TimeToCameraStayDownAfterGlide && IsGliding)
+        {
+            CameraStartedGliding = true;
+        }
+    }
+
+    private void UpdateIdleTimeout()
+    {
+        if (Velocity == 0 && Gravity == 0)
+        {
+            IdleTimeLeft -= Time.deltaTime;
+            if (IdleTimeLeft < 0)
+            {
+                IsIdle = true;
+            }
+        }
+        else
+        {
+            IsIdle = false;
+            IdleTimeLeft = IdleTimeoutTime;
+        }
+    }
+
+    public float CalculateCameraMultiplierX()
+    {
+        float multiplier = 1f;
+        if (IsSprinting) multiplier *= SprintCameraOffsetMultiplier;
+        if (IsDashing) multiplier *= DashCameraOffsetMultiplier;
+        if (IsIdle) multiplier *= 0;
+        return multiplier;
+    }
+
+    public float CalculateCameraMultiplierY()
+    {
+        float multiplier = 1f;
+        float ySpeed = Gravity;
+
+        //Lowers the camera is the player is/was gliding
+        if (IsGliding || CameraStartedGliding)
+        {
+            //GlideCameraOffset (should) be a negative number
+            multiplier *= GlideCameraOffset;
+        }
+
+        //Creates a return Value to be clamped within our range
+        float returnVal = multiplier * ySpeed;
+        //Clamps the return value within the range (DOESN'T WORK RIGHT NOW)
+        Mathf.Clamp(returnVal, -CameraMaxDistanceFromPlayerY, CameraMaxDistanceFromPlayerY);
+        return multiplier;
+    }
+
+    bool IsGrounded(RaycastHit2D hitInfo)
+    {
+        bool bCloseToGround = hitInfo.distance < GroundedGraceDistance;
+        bool bIsFalling = RefRigidbody.velocity.y <= 0;
+        return bCloseToGround && bIsFalling;
     }
 }
