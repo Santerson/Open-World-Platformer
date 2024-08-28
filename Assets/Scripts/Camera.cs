@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Camera : MonoBehaviour
@@ -8,6 +9,7 @@ public class Camera : MonoBehaviour
     [SerializeField] Vector2 FollowingOffset;
     [SerializeField] GameObject FollowingObject;
     [SerializeField] float SpeedDivider = 100f;
+    float MaxYPos;
     Vector2 TargetPos;
     // Start is called before the first frame update
     void Start()
@@ -42,6 +44,7 @@ public class Camera : MonoBehaviour
         //Creates a target position for the camera. A x and y position are created to be put into a Vec2 later
         float xCameraOffset = followingTargetPos.x + FollowingOffset.x * invertFollowing * PlayerImposedOffsetMultiplierX;
         float yCameraOffset = followingTargetPos.y + FollowingOffset.y * PlayerImposedOffsetMultiplierY;
+
 
         //Putting the newly created targetpos into the vec2 for target position
         TargetPos = new Vector2(xCameraOffset, yCameraOffset);

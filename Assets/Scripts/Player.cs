@@ -9,57 +9,99 @@ public class Player : MonoBehaviour
 {
     //Movement
     [Header("Movement")]
-    [SerializeField] float MaxSpeed = 0.03f;
+    [Tooltip("The... max speed...")]
+    [SerializeField] float MaxSpeed = 0.025f;
+    [Tooltip("The multiplier to player speed if they are sprinting")]
     [SerializeField] float SprintMultiplier = 1.3f;
+    [Tooltip("The rate at which the player accelerates up to max speed before reaching max speed")]
     [SerializeField] float Acceleration = 0.1f;
+    [Tooltip("The rate at which the player slows down once releasing movement keys OR TURNING AROUND")]
     [SerializeField] float Deceleration = 0.2f;
-    [SerializeField] float DistanceFromWalls = 0.05f;
+    [Tooltip("The distance the player can be from a wall before being unable to move towards it")]
+    [SerializeField] float DistanceFromWalls = 0.01f;
+    [Tooltip("The amount of time the player can't move before being considered 'idle'")]
     [SerializeField] float IdleTimeoutTime = 2f;
 
     //Dashing
     [Header("Dashing")]
+    [Tooltip("The power of the dash (somewhat obselite)")]
     [SerializeField] float DashPower = 0.2f;
+    [Tooltip("The length of the dash. Shorter numbers mean a shorter dash.")]
     [SerializeField] float DashLength = 100f;
-    [SerializeField] float DashMaxSpeed = 0.05f;
+    [Tooltip("The maximum NEEEEEEEWWWWWWMMMMMMness of a dash")]
+    [SerializeField] float DashMaxSpeed = 0.06f;
+    [Tooltip("The amount of time the player needs to wait between dashes (in seconds)")]
     [SerializeField] float DashCooldown = 1.0f;
-    [SerializeField] float DashRolloutTime = 0.5f;
+    [Tooltip("After a dash is complete, the amount of time a dash is rolled out for")]
+    [SerializeField] float DashRolloutTime = 0.1f;
+    [Tooltip("After a dash is complete, the speed of the rollout (Higher numbers mean a SLOWER dash)")]
     [SerializeField] float DashRolloutDivider = 500f;
 
     //Jumping
     [Header("Jumping")]
-    [SerializeField] float JumpHeight = 1f;
-    [SerializeField] float GravityIntensity;
-    [SerializeField] float MaxFallSpeed = -1f;
+    [Tooltip("Tonight my friends, we will soar through the heavens - Queen Scarlet, Wings of Fire")]
+    [SerializeField] float JumpHeight = 0.1f;
+    [Tooltip("The... Intensity of the Gravity... Does anyone actually read these?")]
+    [SerializeField] float GravityIntensity = 0.003f;
+    [Tooltip("The max fall speed of the player. The player can by no means exceed this fallrate")]
+    [SerializeField] float MaxFallSpeed = -0.2f;
+    [Tooltip("Remember, the jump off the ground counts!")]
     [SerializeField] int Jumps = 2;
-    [SerializeField] float HeightOffGround = 0.03f;
-    [SerializeField] float EarlyEndJumpGravityBoost = 3f;
-    [SerializeField] float DoubleJumpPower = 1.5f;
+    [Tooltip("The actual player's height off the ground when they are landed")]
+    [SerializeField] float HeightOffGround = 0f;
+    [Tooltip("The player's height off the ground for them to be considered as far as the game is considered," +
+        " 'landed' (Return jump, refresh glide, etc.)")]
     [SerializeField] float GroundedGraceDistance = 0.1f;
-    [SerializeField] float HeadHitDistance = 0.1f;
+    [Tooltip("If the player stops holding jump mid-jump, the amplification of the gravity before they 0 out in height")]
+    [SerializeField] float EarlyEndJumpGravityBoost = 1.5f;
+    [Tooltip("The extra power of future jumps (Is a multiplication factor)")]
+    [SerializeField] float DoubleJumpPower = 1.5f;
+    [Tooltip("Just how terrible do you want to make the hitboxes?")]
+    [SerializeField] float HeadHitDistance = 0.03f;
 
     //Gliding
     [Header("Gliding")]
-    [SerializeField] float GlideGravity = 100f;
+    [Tooltip("The rate at which the player falls while gliding")]
+    [SerializeField] float GlideGravity = 0.01f;
+    [Tooltip("The amount of time the player can spend gliding before giving out")]
     [SerializeField] float GlideTime = 2.0f;
 
     //Camera
     [Header("Camera")]
+    [Tooltip("While the player is sprinting, the camera's distance will be multiplied by this amount")]
     [SerializeField] float SprintCameraOffsetMultiplier = 1.3f;
+    [Tooltip("Honeestly, I think most of these are fairly self explanitory")]
     [SerializeField] float DashCameraOffsetMultiplier = 1.5f;
+    [Tooltip("I doubt I will ever read these.")]
     [SerializeField] float GlideCameraOffset = -1f;
+    [Tooltip("The player's maximum distance from the camera. (NOT WORKING)")]
     [SerializeField] float CameraMaxDistanceFromPlayerY = 2f;
-    [SerializeField] float TimeToCameraStayDownAfterGlide = 0.5f;
+    [Tooltip("The amount of time spent gliding before the camera stays looking down while not gliding")]
+    [SerializeField] float TimeToCameraStayDownAfterGlide = 0.3f;
+    [Tooltip("The amount of time the player has to hold looking up or down for the camera to move (in seconds)")]
     [SerializeField] float TimeToLookVertically = 0.5f;
+    [Tooltip("The amount of y that is added when looking up")]
     [SerializeField] float LookUpCameraAddedOffset = 1.5f;
+    [Tooltip("The amount of y that is added when looking down (should be negative)")]
     [SerializeField] float LookDownCameraAddedOffset = -4f;
 
     //Keybinds
     [Header("Keybinds")]
+    [Tooltip("Default: A")]
     [SerializeField] KeyCode LeftKey = KeyCode.A;
+    [Tooltip("Default: D")]
     [SerializeField] KeyCode RightKey = KeyCode.D;
+    [Tooltip("Defualt: W")]
+    [SerializeField] KeyCode LookUpKey = KeyCode.W;
+    [Tooltip("Default: S")]
+    [SerializeField] KeyCode LookDownKey = KeyCode.S;
+    [Tooltip("Default: space")]
     [SerializeField] KeyCode JumpKey = KeyCode.Space;
+    [Tooltip("Default: Lshift")]
     [SerializeField] KeyCode SprintKey = KeyCode.LeftShift;
+    [Tooltip("Default: Lctrl")]
     [SerializeField] KeyCode DashKey = KeyCode.LeftControl;
+    [Tooltip("Default: C")]
     [SerializeField] KeyCode GlideKey = KeyCode.C;
 
     /// <summary>
@@ -68,13 +110,15 @@ public class Player : MonoBehaviour
     public float Velocity { get; private set; }
     public float Gravity { get; private set; }
     public int Direction { get; private set; }
-    public int KeyStrokeDirection { get; private set; }
+    public int RawInputDirection { get; private set; }
     public int PlayerLookingDirection { get; private set; }
     public bool IsSprinting { get; private set; }
     public bool IsDashing { get; private set; }
     public bool IsIdle { get; private set; }
     public bool IsGliding { get; private set; }
-    public bool IsLanded { get;private set; }
+    public bool IsLanded { get; private set; }
+    public bool IsLookingUp { get; private set; }
+    public bool IsLookingDown { get; private set; }
 
 
     int JumpsLeft = 0;
@@ -82,11 +126,11 @@ public class Player : MonoBehaviour
     bool DoubleJumpReady = false;
     bool SlowDownDash = false;
     bool CameraStartedGliding = false;
-    bool LookingUp = false;
-    bool LookingDown = false;
     float DashLeft = 0;
     float DashCDLeft = 0;
     float DashRolloutLeft = 0;
+    float TimeUntilLookUp = 0;
+    float TimeUntilLookDown = 0;
     float GlideTimeLeft = 0;
     float IdleTimeLeft = 0;
 
@@ -109,7 +153,6 @@ public class Player : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
     void Update()
     {
         UpdateVariables();
@@ -121,127 +164,10 @@ public class Player : MonoBehaviour
         transform.position = new Vector2(transform.position.x + Velocity * Time.deltaTime * 300, transform.position.y + Gravity  * (Time.deltaTime * 100));
     }
 
-    private void UpdateVariables()
-    {
-        if (Velocity < 0)
-        {
-            Direction = -1;
-        }
-        else
-        {
-            Direction = 1;
-        }
 
-        if (KeyStrokeDirection != 0)
-        {
-            PlayerLookingDirection = KeyStrokeDirection;
-        }
-    }
 
-    private void UpdateMovement()
-    {
-        //Checking for sprint
-        float sprintMultiplier = CalculateMovementMultiplier();
 
-        //Checking if player is moving too fast
-        if (Mathf.Abs(Velocity) > MaxSpeed * sprintMultiplier + DashLeft)
-        {
-            if (DashLeft != 0)
-            {
-                Velocity += DashLeft * Direction;
-            }
-            else
-            {
-                Velocity = MaxSpeed * sprintMultiplier * Direction;
-            }
-        }
-        
-            //Moving the player
-        //Defining rates of acceleration and deceleration
-        float accelerationRate = Acceleration * Time.deltaTime;
-        float decelerationRate = Deceleration * Time.deltaTime;
-        //Moves player
-        MovePlayer(accelerationRate, decelerationRate, sprintMultiplier);
-        //Stops player if touching a wall
-        CheckIfPlayerIsTooCloseToWalls();
-    }
-    private void UpdateGravity()
-    {
-        //The origin of the raycast should be from the bottom of the player's capsule
-        Vector2 origin = new Vector2(transform.position.x, transform.position.y - 1.001f);
-        Vector2 direction = Vector2.down;
-
-        float frameDifference = Time.deltaTime * 100;
-
-        //Detects if the player is on the floor and stops them from falling/gives them their jumps
-        DetectFloorAndRoof(origin, direction, frameDifference);
-
-        //Glides the player if the keybind is being held
-        Glide();
-
-        //Elevates the player
-        JumpPlayer(frameDifference);
-    }
-
-    private void UpdateDash()
-    {
-        //Detects if the player is holding down the dash key and is able to dash
-        if (Input.GetKeyDown(DashKey) && Velocity != 0 && DashCDLeft <= 0) 
-        {
-            IsDashing = true;
-            DashLeft = DashPower;
-            DashCDLeft = DashCooldown;
-        }
-
-        //Checks if the player is dashing
-        if (IsDashing)
-        {
-            //Creates a change variable which will be the distance covered this frame
-            float change = DashLeft / DashLength * (Time.deltaTime * 300);
-            //Reduces from the amount of dash left
-            //*Dash left is the total amount of 'dash' in the dash, we take part of this dash
-            //as distance traveled*
-            DashLeft -= change;
-            //Cap the speed at a max speed so sprint dashing isn't faster than normal dashing
-            if (Mathf.Abs(Velocity) < DashMaxSpeed)
-            {
-                Velocity += change * KeyStrokeDirection;
-            }
-            else
-            {
-                Velocity = DashMaxSpeed * KeyStrokeDirection;
-            }
-            //Stop the dash if the dash is almost =0
-            if (DashLeft < 0.1f)
-            {
-                DashLeft = 0;
-                DashRolloutLeft = DashRolloutTime;
-                SlowDownDash = true;
-                IsDashing = false;
-            }
-        }
-        
-        //If the dash is complete, we continue to move the player a bit, slower so the stop isn't as jarring
-        if (SlowDownDash)
-        {
-            //Adds a small amount to the Velocity
-            Velocity += DashLength * Time.deltaTime / DashRolloutDivider * Direction;
-            //Decreases the amount of time left in the dash rollout
-            DashRolloutLeft -= Time.deltaTime;
-            if (DashRolloutLeft <= 0) 
-            {
-                
-                SlowDownDash = false;
-            }
-        }
-
-        //Decreases the Dash Cooldown if the Dash is on cooldown
-        if (DashCDLeft > 0)
-        {
-            DashCDLeft -= Time.deltaTime;
-        }
-    }
-
+    //Movement Related functions
     private float CalculateMovementMultiplier()
     {
         //Create a return variable
@@ -280,7 +206,7 @@ public class Player : MonoBehaviour
                 Velocity += accelerationRate * sprintMultiplier;
             }
             IsIdle = false;
-            KeyStrokeDirection = 1;
+            RawInputDirection = 1;
         }
         //Leftward movement
         if (Input.GetKey(LeftKey) && Velocity > -MaxSpeed * sprintMultiplier && !IsDashing)
@@ -295,7 +221,7 @@ public class Player : MonoBehaviour
                 Velocity -= accelerationRate * sprintMultiplier;
             }
             IsIdle = false;
-            KeyStrokeDirection = -1;
+            RawInputDirection = -1;
         }
         //Checks if player is not moving or if they are moving faster than they should be
         if ((!Input.GetKey(LeftKey) && !Input.GetKey(RightKey) || Input.GetKey(LeftKey) && Input.GetKey(RightKey)) && !IsDashing)
@@ -314,10 +240,128 @@ public class Player : MonoBehaviour
             {
                 Velocity = 0;
             }
-            KeyStrokeDirection = 0;
+            RawInputDirection = 0;
         }
     }
+    private void UpdateMovement()
+    {
+        //Checking for sprint
+        float sprintMultiplier = CalculateMovementMultiplier();
 
+        //Checking if player is moving too fast
+        if (Mathf.Abs(Velocity) > MaxSpeed * sprintMultiplier + DashLeft)
+        {
+            if (DashLeft != 0)
+            {
+                Velocity += DashLeft * Direction;
+            }
+            else
+            {
+                Velocity = MaxSpeed * sprintMultiplier * Direction;
+            }
+        }
+        
+            //Moving the player
+        //Defining rates of acceleration and deceleration
+        float accelerationRate = Acceleration * Time.deltaTime;
+        float decelerationRate = Deceleration * Time.deltaTime;
+        //Moves player
+        MovePlayer(accelerationRate, decelerationRate, sprintMultiplier);
+        //Stops player if touching a wall
+        CheckIfPlayerIsTooCloseToWalls();
+        //Checks if the player is looking up or down
+        LookUpAndDown();
+    }
+    private void UpdateDash()
+    {
+        //Detects if the player is holding down the dash key and is able to dash
+        if (Input.GetKeyDown(DashKey) && Velocity != 0 && DashCDLeft <= 0) 
+        {
+            IsDashing = true;
+            DashLeft = DashPower;
+            DashCDLeft = DashCooldown;
+        }
+
+        //Checks if the player is dashing
+        if (IsDashing)
+        {
+            //Creates a change variable which will be the distance covered this frame
+            float change = DashLeft / DashLength * (Time.deltaTime * 300);
+            //Reduces from the amount of dash left
+            //*Dash left is the total amount of 'dash' in the dash, we take part of this dash
+            //as distance traveled*
+            DashLeft -= change;
+            //Cap the speed at a max speed so sprint dashing isn't faster than normal dashing
+            if (Mathf.Abs(Velocity) < DashMaxSpeed)
+            {
+                Velocity += change * RawInputDirection;
+            }
+            else
+            {
+                Velocity = DashMaxSpeed * RawInputDirection;
+            }
+            //Stop the dash if the dash is almost =0
+            if (DashLeft < 0.1f)
+            {
+                DashLeft = 0;
+                DashRolloutLeft = DashRolloutTime;
+                SlowDownDash = true;
+                IsDashing = false;
+            }
+        }
+        
+        //If the dash is complete, we continue to move the player a bit, slower so the stop isn't as jarring
+        if (SlowDownDash)
+        {
+            //Adds a small amount to the Velocity
+            Velocity += DashLength * Time.deltaTime / DashRolloutDivider * Direction;
+            //Decreases the amount of time left in the dash rollout
+            DashRolloutLeft -= Time.deltaTime;
+            if (DashRolloutLeft <= 0) 
+            {
+                
+                SlowDownDash = false;
+            }
+        }
+
+        //Decreases the Dash Cooldown if the Dash is on cooldown
+        if (DashCDLeft > 0)
+        {
+            DashCDLeft -= Time.deltaTime;
+        }
+    }
+    private void LookUpAndDown()
+    {
+        if (Input.GetKey(LookUpKey) && RawInputDirection == 0 && Gravity == 0)
+        {
+            TimeUntilLookUp += Time.deltaTime;
+            if (TimeUntilLookUp > TimeToLookVertically)
+            {
+                IsLookingUp = true;
+                IsIdle = true;
+            }
+        }
+        else
+        {
+            IsLookingUp = false;
+            TimeUntilLookUp = 0;
+        }
+
+        if (Input.GetKey(LookDownKey) && RawInputDirection == 0 && Gravity == 0)
+        {
+            TimeUntilLookDown += Time.deltaTime;
+            if (TimeUntilLookDown > TimeToLookVertically)
+            {
+                IsLookingDown = true;
+                IsIdle = true;
+            }
+        }
+        else
+        {
+            IsLookingDown = false;
+            TimeUntilLookDown = 0;
+        }
+    }
     private void DetectFloorAndRoof(Vector2 origin, Vector2 direction, float frameDifference)
     {
 
@@ -375,7 +419,6 @@ public class Player : MonoBehaviour
             Gravity = 0 - GravityIntensity;
         }
     }
-
     private void CheckIfPlayerIsTooCloseToWalls()
     {
         //Creating an origin for raycasts
@@ -393,6 +436,26 @@ public class Player : MonoBehaviour
         }
     }
 
+
+
+    //Jumping Related Functions
+    private void UpdateGravity()
+    {
+        //The origin of the raycast should be from the bottom of the player's capsule
+        Vector2 origin = new Vector2(transform.position.x, transform.position.y - 1.001f);
+        Vector2 direction = Vector2.down;
+
+        float frameDifference = Time.deltaTime * 100;
+
+        //Detects if the player is on the floor and stops them from falling/gives them their jumps
+        DetectFloorAndRoof(origin, direction, frameDifference);
+
+        //Glides the player if the keybind is being held
+        Glide();
+
+        //Elevates the player
+        JumpPlayer(frameDifference);
+    }
     private void JumpPlayer(float frameDifference)
     {
 
@@ -424,7 +487,6 @@ public class Player : MonoBehaviour
             IsUpwardAcceleration = false;
         }
     }
-
     private void Glide()
     {
         if (Input.GetKey(GlideKey) && !IsLanded && GlideTimeLeft > 0)
@@ -462,6 +524,9 @@ public class Player : MonoBehaviour
         }
     }
 
+
+    
+    //Camera Related Functions
     private void UpdateIdleTimeout()
     {
         if (Velocity == 0 && Gravity == 0)
@@ -478,7 +543,6 @@ public class Player : MonoBehaviour
             IdleTimeLeft = IdleTimeoutTime;
         }
     }
-
     public float CalculateCameraMultiplierX()
     {
         float multiplier = 1f;
@@ -487,7 +551,6 @@ public class Player : MonoBehaviour
         if (IsIdle) multiplier *= 0;
         return multiplier;
     }
-
     public float CalculateCameraMultiplierY()
     {
         float multiplier = 1f;
@@ -500,6 +563,15 @@ public class Player : MonoBehaviour
             multiplier *= GlideCameraOffset;
         }
 
+        if (IsLookingDown)
+        {
+            multiplier += LookDownCameraAddedOffset;
+        }
+        if (IsLookingUp)
+        {
+            multiplier += LookUpCameraAddedOffset;
+        }
+
         //Creates a return Value to be clamped within our range
         float returnVal = multiplier * ySpeed;
         //Clamps the return value within the range (DOESN'T WORK RIGHT NOW)
@@ -507,10 +579,30 @@ public class Player : MonoBehaviour
         return multiplier;
     }
 
+
+
+
+    //Misc. Functions
     bool IsGrounded(RaycastHit2D hitInfo)
     {
         bool bCloseToGround = hitInfo.distance < GroundedGraceDistance;
         bool bIsFalling = RefRigidbody.velocity.y <= 0;
         return bCloseToGround && bIsFalling;
+    }
+    private void UpdateVariables()
+    {
+        if (Velocity < 0)
+        {
+            Direction = -1;
+        }
+        else
+        {
+            Direction = 1;
+        }
+
+        if (RawInputDirection != 0)
+        {
+            PlayerLookingDirection = RawInputDirection;
+        }
     }
 }

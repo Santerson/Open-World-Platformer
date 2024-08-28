@@ -404,6 +404,8 @@ MonoBehaviour:
   DashCooldown: 1
   DampingCoefficient: 0.97
   KeyBindJump: 32
+  RefRigidbody: {fileID: 0}
+  RefCollider: {fileID: 0}
   ExtraJumpCount: 1
   GroundedGraceDistance: 0.1
   JumpHeight: 5
@@ -416,7 +418,17 @@ MonoBehaviour:
   CameraDescendMultiplier: -0.1
   CameraMaxDistanceFromPlayerY: 2
   TimeBeforeIdle: 2
+  JumpsLeft: 0
+  SpaceNotLetGoOf: 0
+  MovementSpeedMultiplier: 0
+  DashLeft: 0
+  DashCDLeft: 0
+  IdleTimeLeft: 0
+  IsSprinting: 0
+  IsDashing: 0
+  IsIdle: 1
   LookingDirection: {x: 0, y: 0}
+  RespawnLocation: {x: -5.84, y: -3}
 --- !u!212 &435508774
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -539,6 +551,7 @@ MonoBehaviour:
   Acceleration: 0.1
   Deceleration: 0.2
   DistanceFromWalls: 0.01
+  IdleTimeoutTime: 2
   DashPower: 0.2
   DashLength: 100
   DashMaxSpeed: 0.06
@@ -550,19 +563,24 @@ MonoBehaviour:
   MaxFallSpeed: -0.2
   Jumps: 2
   HeightOffGround: 0
+  GroundedGraceDistance: 0.1
   EarlyEndJumpGravityBoost: 1.5
   DoubleJumpPower: 1.5
-  GroundedGraceDistance: 0.1
   HeadHitDistance: 0.03
   GlideGravity: 0.01
   GlideTime: 2
   SprintCameraOffsetMultiplier: 1.3
   DashCameraOffsetMultiplier: 1.5
-  CameraAscendMultiplier: 1.3
-  CameraDescendMultiplier: -0.1
+  GlideCameraOffset: -1
   CameraMaxDistanceFromPlayerY: 2
+  TimeToCameraStayDownAfterGlide: 0.3
+  TimeToLookVertically: 0.5
+  LookUpCameraAddedOffset: 1.5
+  LookDownCameraAddedOffset: -3
   LeftKey: 97
   RightKey: 100
+  LookUpKey: 119
+  LookDownKey: 115
   JumpKey: 32
   SprintKey: 304
   DashKey: 306
