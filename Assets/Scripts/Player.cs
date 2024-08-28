@@ -117,8 +117,10 @@ public class Player : MonoBehaviour
     public bool IsIdle { get; private set; }
     public bool IsGliding { get; private set; }
     public bool IsLanded { get; private set; }
+    public bool IsFalling { get; private set; }
     public bool IsLookingUp { get; private set; }
     public bool IsLookingDown { get; private set; }
+    public float DashCDLeft { get; private set; }
 
 
     int JumpsLeft = 0;
@@ -127,7 +129,6 @@ public class Player : MonoBehaviour
     bool SlowDownDash = false;
     bool CameraStartedGliding = false;
     float DashLeft = 0;
-    float DashCDLeft = 0;
     float DashRolloutLeft = 0;
     float TimeUntilLookUp = 0;
     float TimeUntilLookDown = 0;
@@ -168,6 +169,35 @@ public class Player : MonoBehaviour
 
 
     //Movement Related functions
+    private void UpdateMovement()
+    {
+        //Checking for sprint
+        float sprintMultiplier = CalculateMovementMultiplier();
+
+        //Checking if player is moving too fast
+        if (Mathf.Abs(Velocity) > MaxSpeed * sprintMultiplier + DashLeft)
+        {
+            if (DashLeft != 0)
+            {
+                Velocity += DashLeft * Direction;
+            }
+            else
+            {
+                Velocity = MaxSpeed * sprintMultiplier * Direction;
+            }
+        }
+        
+            //Moving the player
+        //Defining rates of acceleration and deceleration
+        float accelerationRate = Acceleration * Time.deltaTime;
+        float decelerationRate = Deceleration * Time.deltaTime;
+        //Moves player
+        MovePlayer(accelerationRate, decelerationRate, sprintMultiplier);
+        //Stops player if touching a wall
+        CheckIfPlayerIsTooCloseToWalls();
+        //Checks if the player is looking up or down
+        LookUpAndDown();
+    }
     private float CalculateMovementMultiplier()
     {
         //Create a return variable
@@ -243,35 +273,6 @@ public class Player : MonoBehaviour
             RawInputDirection = 0;
         }
     }
-    private void UpdateMovement()
-    {
-        //Checking for sprint
-        float sprintMultiplier = CalculateMovementMultiplier();
-
-        //Checking if player is moving too fast
-        if (Mathf.Abs(Velocity) > MaxSpeed * sprintMultiplier + DashLeft)
-        {
-            if (DashLeft != 0)
-            {
-                Velocity += DashLeft * Direction;
-            }
-            else
-            {
-                Velocity = MaxSpeed * sprintMultiplier * Direction;
-            }
-        }
-        
-            //Moving the player
-        //Defining rates of acceleration and deceleration
-        float accelerationRate = Acceleration * Time.deltaTime;
-        float decelerationRate = Deceleration * Time.deltaTime;
-        //Moves player
-        MovePlayer(accelerationRate, decelerationRate, sprintMultiplier);
-        //Stops player if touching a wall
-        CheckIfPlayerIsTooCloseToWalls();
-        //Checks if the player is looking up or down
-        LookUpAndDown();
-    }
     private void UpdateDash()
     {
         //Detects if the player is holding down the dash key and is able to dash
@@ -332,6 +333,7 @@ public class Player : MonoBehaviour
     }
     private void LookUpAndDown()
     {
+        
         if (Input.GetKey(LookUpKey) && RawInputDirection == 0 && Gravity == 0)
         {
             TimeUntilLookUp += Time.deltaTime;
@@ -346,7 +348,12 @@ public class Player : MonoBehaviour
             IsLookingUp = false;
             TimeUntilLookUp = 0;
         }
-
+        /*
+        if (Input.GetKey(LookUpKey))
+        {
+            IsLookingUp = true;
+        }
+        */
         if (Input.GetKey(LookDownKey) && RawInputDirection == 0 && Gravity == 0)
         {
             TimeUntilLookDown += Time.deltaTime;
@@ -360,63 +367,6 @@ public class Player : MonoBehaviour
         {
             IsLookingDown = false;
             TimeUntilLookDown = 0;
-        }
-    }
-    private void DetectFloorAndRoof(Vector2 origin, Vector2 direction, float frameDifference)
-    {
-
-        //Checks if the player is in the range to recover their jumps
-        RaycastHit2D hit = Physics2D.Raycast(origin, direction, GroundedGraceDistance);
-
-        IsLanded = false;
-        if (IsGrounded(hit) && !IsUpwardAcceleration && Physics2D.Raycast(origin, direction, GroundedGraceDistance))
-        {
-            IsLanded = true;
-        }
-
-        //Checks if the raycast hit object is considered ground
-        if (IsLanded)
-        {
-            //Resets jumps
-            JumpsLeft = Jumps;
-            DoubleJumpReady = false;
-        }
-
-        //Checks if the player is actually touching the ground (using a very small raycast)
-        if (Physics2D.Raycast(origin, direction, HeightOffGround) && Gravity < 0)
-        {
-            //Checks if the object is considered ground
-            if (IsGrounded(hit))
-            {
-                //Stops the player from falling
-                Gravity = 0;
-            }
-        }
-        //Checks if the player is currently airborne by using the grounded grace distance
-        else if (!IsLanded)
-        {
-            //Reduces the player's ySpeed if so
-            if (Gravity > MaxFallSpeed)
-            {
-                if (IsGliding && !IsUpwardAcceleration)
-                {
-                    Gravity = 0 - GlideGravity;
-                }
-                else
-                {
-                    Gravity -= GravityIntensity * frameDifference;
-                }
-            }
-        }
-
-        //Changing the direction of the raycast to be from the top of the player going up
-        origin = new Vector2(transform.position.x, transform.position.y + 1.001f);
-        direction = Vector2.up;
-
-        //Checking if the player hits their head on something above them
-        if (Physics2D.Raycast(origin, direction, HeadHitDistance))
-        {
-            Gravity = 0 - GravityIntensity;
         }
     }
     private void CheckIfPlayerIsTooCloseToWalls()
@@ -485,6 +435,63 @@ public class Player : MonoBehaviour
         if (Gravity < 0 && IsUpwardAcceleration)
         {
             IsUpwardAcceleration = false;
+        }
+    }
+    private void DetectFloorAndRoof(Vector2 origin, Vector2 direction, float frameDifference)
+    {
+
+        //Checks if the player is in the range to recover their jumps
+        RaycastHit2D hit = Physics2D.Raycast(origin, direction, GroundedGraceDistance);
+
+        IsLanded = false;
+        if (IsGrounded(hit) && !IsUpwardAcceleration && Physics2D.Raycast(origin, direction, GroundedGraceDistance))
+        {
+            IsLanded = true;
+        }
+
+        //Checks if the raycast hit object is considered ground
+        if (IsLanded)
+        {
+            //Resets jumps
+            JumpsLeft = Jumps;
+            DoubleJumpReady = false;
+        }
+
+        //Checks if the player is actually touching the ground (using a very small raycast)
+        if (Physics2D.Raycast(origin, direction, HeightOffGround) && Gravity < 0)
+        {
+            //Checks if the object is considered ground
+            if (IsGrounded(hit))
+            {
+                //Stops the player from falling
+                Gravity = 0;
+            }
+        }
+        //Checks if the player is currently airborne by using the grounded grace distance
+        else if (!IsLanded)
+        {
+            //Reduces the player's ySpeed if so
+            if (Gravity > MaxFallSpeed)
+            {
+                if (IsGliding && !IsUpwardAcceleration)
+                {
+                    Gravity = 0 - GlideGravity;
+                }
+                else
+                {
+                    Gravity -= GravityIntensity * frameDifference;
+                }
+            }
+        }
+
+        //Changing the direction of the raycast to be from the top of the player going up
+        origin = new Vector2(transform.position.x, transform.position.y + 1.001f);
+        direction = Vector2.up;
+
+        //Checking if the player hits their head on something above them
+        if (Physics2D.Raycast(origin, direction, HeadHitDistance))
+        {
+            Gravity = 0 - GravityIntensity;
         }
     }
     private void Glide()
@@ -581,7 +588,6 @@ public class Player : MonoBehaviour
 
 
 
-
     //Misc. Functions
     bool IsGrounded(RaycastHit2D hitInfo)
     {
@@ -603,6 +609,15 @@ public class Player : MonoBehaviour
         if (RawInputDirection != 0)
         {
             PlayerLookingDirection = RawInputDirection;
+        }
+
+        if (Gravity < 0)
+        {
+            IsFalling = true;
+        }
+        else
+        {
+            IsFalling = false;
         }
     }
 }
