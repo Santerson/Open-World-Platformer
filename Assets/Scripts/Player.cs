@@ -79,8 +79,8 @@ public class Player : MonoBehaviour
 
     //Sword
     [Header("Sword")]
-    [SerializeField] float SwordSwingDuration = 1f;
-    [SerializeField] float SwordReloadTime = 1.5f;
+    [SerializeField] public float SwordSwingDuration = 1f;
+    [SerializeField] public float SwordReloadTime = 1.5f;
 
     //Camera
     [Header("Camera")]
@@ -709,6 +709,7 @@ public class Player : MonoBehaviour
         if (IsSwordSwing)
         {
             SwordAttackingTimeLeft -= Time.deltaTime;
+            SwordReloadingTimeLeft = SwordReloadTime;
             if (SwordAttackingTimeLeft <= 0)
             {
                 IsSwordSwing = false;
@@ -716,7 +717,7 @@ public class Player : MonoBehaviour
             }
         }
 
-        if (SwordReloadingTimeLeft > 0)
+        if (SwordReloadingTimeLeft > 0 && !IsSwordSwing)
         {
             SwordReloadingTimeLeft -= Time.deltaTime;
         }

@@ -1216,6 +1216,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SwingSpeedMultiplier: 100
+  SwordSwingAngleMax: 120
 --- !u!1 &481718518
 GameObject:
   m_ObjectHideFlags: 0
