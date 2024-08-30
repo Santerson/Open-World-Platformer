@@ -34,7 +34,7 @@ public class Camera : MonoBehaviour
     private void CalculateTargetPos()
     {
         if (FollowingObject == null) { return; }
-        if (LookingDirection == 0) { LookingDirection = FindObjectOfType<Player>().PlayerLookingDirection; }
+        if (LookingDirection == 0) { LookingDirection = FindObjectOfType<Player>().RawInputNoZero; }
         //Get camera offset depending on what the player is doing
         float PlayerImposedOffsetMultiplierX = FindObjectOfType<Player>().CalculateCameraMultiplierX();
         float PlayerImposedOffsetMultiplierY = FindObjectOfType<Player>().CalculateCameraMultiplierY();
@@ -43,7 +43,7 @@ public class Camera : MonoBehaviour
         Vector2 followingTargetPos = FollowingObject.transform.position;
 
         //Inverts the position of the camera if the player is looking left
-        float invertFollowing = FindObjectOfType<Player>().PlayerLookingDirection;
+        float invertFollowing = FindObjectOfType<Player>().RawInputNoZero;
 
         //Creates a target position for the camera. A x and y position are created to be put into a Vec2 later
         float xCameraOffset = followingTargetPos.x + FollowingOffset.x * invertFollowing * PlayerImposedOffsetMultiplierX;

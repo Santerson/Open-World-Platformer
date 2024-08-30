@@ -11,8 +11,6 @@ public class Player : MonoBehaviour
     [Header("Movement")]
     [Tooltip("The... max speed...")]
     [SerializeField] float MaxSpeed = 0.025f;
-    [Tooltip("The multiplier to player speed if they are sprinting")]
-    [SerializeField] float SprintMultiplier = 1.3f;
     [Tooltip("The rate at which the player accelerates up to max speed before reaching max speed")]
     [SerializeField] float Acceleration = 0.1f;
     [Tooltip("The rate at which the player slows down once releasing movement keys OR TURNING AROUND")]
@@ -21,6 +19,17 @@ public class Player : MonoBehaviour
     [SerializeField] float DistanceFromWalls = 0.01f;
     [Tooltip("The amount of time the player can't move before being considered 'idle'")]
     [SerializeField] float IdleTimeoutTime = 2f;
+
+    //Sprinting
+    [Header("Sprinting")]
+    [Tooltip("The multiplier to player speed if they are sprinting")]
+    [SerializeField] float SprintMultiplier = 1.3f;
+    [Tooltip("The amount of time the player can run for (in seconds)")]
+    [SerializeField] public float MaxStamina = 5f;
+    [Tooltip("The amound of time after stopping sprinting before recovering Stamina (in seconds)")]
+    [SerializeField] float StaminaRecoveryTime = 0.5f;
+    [Tooltip("The amount of time after running out of Stamina before recovering Stamina (in seconds)")]
+    [SerializeField] float ExhaustionRecoveryTime = 2f;
 
     //Dashing
     [Header("Dashing")]
@@ -31,7 +40,7 @@ public class Player : MonoBehaviour
     [Tooltip("The maximum NEEEEEEEWWWWWWMMMMMMness of a dash")]
     [SerializeField] float DashMaxSpeed = 0.06f;
     [Tooltip("The amount of time the player needs to wait between dashes (in seconds)")]
-    [SerializeField] float DashCooldown = 1.0f;
+    [SerializeField] public float DashCooldown = 1.0f;
     [Tooltip("After a dash is complete, the amount of time a dash is rolled out for")]
     [SerializeField] float DashRolloutTime = 0.1f;
     [Tooltip("After a dash is complete, the speed of the rollout (Higher numbers mean a SLOWER dash)")]
@@ -65,6 +74,13 @@ public class Player : MonoBehaviour
     [SerializeField] float GlideGravity = 0.01f;
     [Tooltip("The amount of time the player can spend gliding before giving out")]
     [SerializeField] float GlideTime = 2.0f;
+    [Tooltip("Resets the glide if the glide button is released mid air")]
+    [SerializeField] bool ResetGlideOnKeyUp = false;
+
+    //Sword
+    [Header("Sword")]
+    [SerializeField] float SwordSwingDuration = 1f;
+    [SerializeField] float SwordReloadTime = 1.5f;
 
     //Camera
     [Header("Camera")]
@@ -84,6 +100,8 @@ public class Player : MonoBehaviour
     [SerializeField] float LookUpCameraAddedOffset = 1.5f;
     [Tooltip("The amount of y that is added when looking down (should be negative)")]
     [SerializeField] float LookDownCameraAddedOffset = -4f;
+    [Tooltip("Counts the player as Idle while looking up or down")]
+    [SerializeField] bool LookCountsAsIdle = false;
 
     //Keybinds
     [Header("Keybinds")]
@@ -103,15 +121,34 @@ public class Player : MonoBehaviour
     [SerializeField] KeyCode DashKey = KeyCode.LeftControl;
     [Tooltip("Default: C")]
     [SerializeField] KeyCode GlideKey = KeyCode.C;
+    [Tooltip("Default: LeftMouse (0)")]
+    [SerializeField] int AttackButton = 0;
 
-    /// <summary>
-    /// The number that changes the player's position as they move. THIS SHOULD BE THE ONLY THING MOVING THE PLAYER
-    /// </summary>
+    //Position changes each frame (Velocity = x, Gravity = y)
     public float Velocity { get; private set; }
     public float Gravity { get; private set; }
+
+    //Player Input Direction
+
+    /// <summary>
+    /// The direction the player is heading where 1 is right and -1 is left. Cannot be 0.
+    /// This is not the player's input but rather the player's velocity and which way they are actively going
+    /// For raw input, use RawInputDirection
+    /// </summary>
     public int Direction { get; private set; }
+    /// <summary>
+    /// The raw input from the player's keyboard, where 1 is right, -1 is left, and 0 is no input/both right and left.
+    /// This is the player's raw input regardless of whether they can move or not
+    /// </summary>
     public int RawInputDirection { get; private set; }
-    public int PlayerLookingDirection { get; private set; }
+    /// <summary>
+    /// The raw input of the player, where 1 is right and -1 is left. CANNOT BE 0.
+    /// This is the player's raw input, regardless of whether they can move or not.
+    /// (THE LARGE DIFFERENCE BETWEEN THIS AND RAW INPUT IS THAT IT CANNOT BE 0, hence, no divide by 0 errors or multiply by 0)
+    /// </summary>
+    public int RawInputNoZero { get; private set; }
+
+    //Is ... actions
     public bool IsSprinting { get; private set; }
     public bool IsDashing { get; private set; }
     public bool IsIdle { get; private set; }
@@ -120,38 +157,51 @@ public class Player : MonoBehaviour
     public bool IsFalling { get; private set; }
     public bool IsLookingUp { get; private set; }
     public bool IsLookingDown { get; private set; }
+    public bool IsSwordSwing { get; private set; }
+
+    //Public cooldowns
     public float DashCDLeft { get; private set; }
+    public float GlideTimeLeft { get; private set; }
+    public float CurrentStamina { get; private set; }
 
 
-    int JumpsLeft = 0;
-    bool IsUpwardAcceleration = false;
-    bool DoubleJumpReady = false;
-    bool SlowDownDash = false;
-    bool CameraStartedGliding = false;
-    float DashLeft = 0;
-    float DashRolloutLeft = 0;
-    float TimeUntilLookUp = 0;
-    float TimeUntilLookDown = 0;
-    float GlideTimeLeft = 0;
+
+    //Movement
     float IdleTimeLeft = 0;
 
-    Rigidbody2D RefRigidbody = null;
-    CapsuleCollider2D RefCollider = null;
 
-    void Awake()
+    //Sprinting
+    float NoSprintTime = 0;
+
+    bool IsExhausted = false;
+
+    //Jumping
+    int JumpsLeft = 0;
+
+    bool IsUpwardAcceleration = false;
+    bool DoubleJumpReady = false;
+
+    //Gliding
+
+    //Dashing
+    float DashLeft = 0;
+    float DashRolloutLeft = 0;
+    
+    bool SlowDownDash = false;
+
+    //Sword
+    float SwordAttackingTimeLeft;
+    float SwordReloadingTimeLeft;
+        
+    //Camera
+    float TimeUntilLookUp = 0;
+    float TimeUntilLookDown = 0;
+
+    bool CameraStartedGliding = false;
+
+    private void Start()
     {
-        // Cache a reference to the rigidbody component on the game start to avoid
-        // the expensive GetComponent<> call each frame.
-        RefRigidbody = GetComponent<Rigidbody2D>();
-        if (RefRigidbody == null)
-        {
-            Debug.LogError("The player controller needs to have a rigidbody.");
-        }
-        RefCollider = GetComponent<CapsuleCollider2D>();
-        if (RefCollider == null)
-        {
-            Debug.LogError("Player Controller could not find a Collider");
-        }
+        CurrentStamina = MaxStamina;
     }
 
     void Update()
@@ -162,6 +212,7 @@ public class Player : MonoBehaviour
         UpdateGravity();
         UpdateDash();
         UpdateIdleTimeout();
+        UpdateAttack();
         transform.position = new Vector2(transform.position.x + Velocity * Time.deltaTime * 300, transform.position.y + Gravity  * (Time.deltaTime * 100));
     }
 
@@ -171,12 +222,16 @@ public class Player : MonoBehaviour
     //Movement Related functions
     private void UpdateMovement()
     {
+        CalculateStamina();
+
         //Checking for sprint
         float sprintMultiplier = CalculateMovementMultiplier();
 
         //Checking if player is moving too fast
+        //Reduces their speed if so
         if (Mathf.Abs(Velocity) > MaxSpeed * sprintMultiplier + DashLeft)
         {
+            //Checks if the player is dashing, and if so, sets that to the speed
             if (DashLeft != 0)
             {
                 Velocity += DashLeft * Direction;
@@ -203,16 +258,14 @@ public class Player : MonoBehaviour
         //Create a return variable
         float sprintMultiplier;
         //Check if the player is sprinting
-        if (Input.GetKey(SprintKey))
+        if (IsSprinting)
         {
             //Add sprint multiplier
             sprintMultiplier = SprintMultiplier;
-            IsSprinting = true;
         }
         else
         {
             sprintMultiplier = 1;
-            IsSprinting = false;
         }
         /*
          * Because of the way this is implemented, if there are any future attempts at trying to impact
@@ -340,7 +393,10 @@ public class Player : MonoBehaviour
             if (TimeUntilLookUp > TimeToLookVertically)
             {
                 IsLookingUp = true;
-                IsIdle = true;
+                if (LookCountsAsIdle)
+                {
+                    IsIdle = true;
+                }
             }
         }
         else
@@ -348,19 +404,16 @@ public class Player : MonoBehaviour
             IsLookingUp = false;
             TimeUntilLookUp = 0;
         }
-        /*
-        if (Input.GetKey(LookUpKey))
-        {
-            IsLookingUp = true;
-        }
-        */
         if (Input.GetKey(LookDownKey) && RawInputDirection == 0 && Gravity == 0)
         {
             TimeUntilLookDown += Time.deltaTime;
             if (TimeUntilLookDown > TimeToLookVertically)
             {
                 IsLookingDown = true;
-                IsIdle = true;
+                if (LookCountsAsIdle)
+                {
+                    IsIdle = true;
+                }
             }
         }
         else
@@ -385,7 +438,59 @@ public class Player : MonoBehaviour
             Velocity = 0;
         }
     }
+    private void CalculateStamina()
+    {
+        //Check if the player is sprinting and if they have stamina to sprint
+        if (Input.GetKey(SprintKey) && CurrentStamina > 0)
+        {
+            IsSprinting = true;
+        }
+        else
+        {
+            IsSprinting = false;
+        }
 
+        //If the player is sprinting
+        if (IsSprinting)
+        {
+            //Reduce their stamina
+            CurrentStamina -= Time.deltaTime;
+            //Reset their time without sprinting
+            NoSprintTime = 0;
+        }
+        //If the player is not sprinting and is not out of stamina, and isnt at max stamina
+        else if (!IsExhausted && CurrentStamina < MaxStamina)
+        {
+            //increase the time without sprinting
+            NoSprintTime += Time.deltaTime;
+            //regenerate stamina if the player has not sprinted for long enough
+            if (NoSprintTime > StaminaRecoveryTime )
+            {
+                CurrentStamina += Time.deltaTime;
+            }
+        }
+        //If the player is at 0 stamina
+        else if (CurrentStamina < MaxStamina) 
+        {
+            //Increase their no sprint time
+            NoSprintTime += Time.deltaTime;
+            //Increase their stamina if they have recovered from their exhaustion time
+            if (NoSprintTime > ExhaustionRecoveryTime)
+            {
+                CurrentStamina += Time.deltaTime;
+                IsExhausted = false;
+            }
+        }
+
+        //Setting IsExhausted
+        IsExhausted = CurrentStamina <= 0;
+
+        //Capping stamina
+        if (CurrentStamina > MaxStamina)
+        {
+            CurrentStamina = MaxStamina;
+        }
+    }
 
 
     //Jumping Related Functions
@@ -505,7 +610,7 @@ public class Player : MonoBehaviour
             IsGliding = false;
         }
 
-        if (Input.GetKeyUp(GlideKey))
+        if (Input.GetKeyUp(GlideKey) && ResetGlideOnKeyUp)
         {
             GlideTimeLeft = 0;
         }
@@ -587,37 +692,62 @@ public class Player : MonoBehaviour
     }
 
 
+    //Sword Functions
+    private void UpdateAttack()
+    {
+        //Checks if the player is attacking and if they are able to attack
+        if (Input.GetMouseButton(AttackButton) && SwordReloadingTimeLeft <= 0)
+        {
+            //Makes the player attack with their sword
+            IsSwordSwing = true;
+            //Starts the animation
+            FindObjectOfType<Sword>().SwingSword();
+            //Lowers the duration of the attack
+            SwordAttackingTimeLeft = SwordSwingDuration;
+        }
+
+        if (IsSwordSwing)
+        {
+            SwordAttackingTimeLeft -= Time.deltaTime;
+            if (SwordAttackingTimeLeft <= 0)
+            {
+                IsSwordSwing = false;
+                SwordReloadingTimeLeft = SwordReloadTime;
+            }
+        }
+
+        if (SwordReloadingTimeLeft > 0)
+        {
+            SwordReloadingTimeLeft -= Time.deltaTime;
+        }
+    }
+
 
     //Misc. Functions
     bool IsGrounded(RaycastHit2D hitInfo)
     {
         bool bCloseToGround = hitInfo.distance < GroundedGraceDistance;
-        bool bIsFalling = RefRigidbody.velocity.y <= 0;
-        return bCloseToGround && bIsFalling;
+        return bCloseToGround;
     }
     private void UpdateVariables()
     {
+        //Update direction
         if (Velocity < 0)
         {
             Direction = -1;
         }
-        else
+        if (Velocity > 0) 
         {
             Direction = 1;
         }
-
+        
+        //Update playerLookingDirection
         if (RawInputDirection != 0)
         {
-            PlayerLookingDirection = RawInputDirection;
+            RawInputNoZero = RawInputDirection;
         }
 
-        if (Gravity < 0)
-        {
-            IsFalling = true;
-        }
-        else
-        {
-            IsFalling = false;
-        }
+        //Update IsFalling
+        IsFalling = Gravity < 0;
     }
 }

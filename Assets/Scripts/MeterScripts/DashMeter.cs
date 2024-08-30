@@ -5,11 +5,14 @@ using UnityEngine;
 public class DashMeter : MonoBehaviour
 {
     float Dash;
+    float MaxDash;
     LineRenderer RefRenderer = null;
     [SerializeField] float Ypos = 0;
+    [SerializeField] bool Main = false;
 
     private void Awake()
     {
+        MaxDash = FindObjectOfType<Player>().DashCooldown;
         RefRenderer = GetComponent<LineRenderer>();
         if (RefRenderer == null)
         {
@@ -28,7 +31,15 @@ public class DashMeter : MonoBehaviour
             return; 
         }
         RefRenderer.enabled = true;
-        RefRenderer.SetPosition(0, new Vector2(1 - Dash, Ypos));
-        RefRenderer.SetPosition(1, new Vector2(1, Ypos));
+        if (Main)
+        {
+            RefRenderer.SetPosition(0, new Vector2(1 - Dash / (MaxDash * 2), Ypos));
+            RefRenderer.SetPosition(1, new Vector2(0 + Dash / (MaxDash * 2), Ypos));
+        }
+        else
+        {
+            RefRenderer.SetPosition(0, new Vector2(0, Ypos));
+            RefRenderer.SetPosition(1, new Vector2(1, Ypos));
+        }
     }
 }
