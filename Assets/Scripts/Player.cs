@@ -30,6 +30,7 @@ public class Player : MonoBehaviour
     [SerializeField] float StaminaRecoveryTime = 0.5f;
     [Tooltip("The amount of time after running out of Stamina before recovering Stamina (in seconds)")]
     [SerializeField] float ExhaustionRecoveryTime = 2f;
+    [SerializeField] float SprintStaminaCostMultiplier = 1f;
 
     //Dashing
     [Header("Dashing")]
@@ -76,6 +77,7 @@ public class Player : MonoBehaviour
     [SerializeField] float GlideTime = 2.0f;
     [Tooltip("Resets the glide if the glide button is released mid air")]
     [SerializeField] bool ResetGlideOnKeyUp = false;
+    [SerializeField] float GlideStaminaCostMultiplier = 2f;
 
     //Sword
     [Header("Sword")]
@@ -454,10 +456,18 @@ public class Player : MonoBehaviour
         if (IsSprinting)
         {
             //Reduce their stamina
-            CurrentStamina -= Time.deltaTime;
+            CurrentStamina -= Time.deltaTime * SprintStaminaCostMultiplier;
             //Reset their time without sprinting
             NoSprintTime = 0;
         }
+
+        if (IsGliding)
+        {
+            CurrentStamina -= Time.deltaTime * GlideStaminaCostMultiplier;
+
+            NoSprintTime = 0;
+        }
+
         //If the player is not sprinting and is not out of stamina, and isnt at max stamina
         else if (!IsExhausted && CurrentStamina < MaxStamina)
         {
