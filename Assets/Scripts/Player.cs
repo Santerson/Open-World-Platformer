@@ -32,6 +32,9 @@ public class Player : MonoBehaviour
     [SerializeField] float ExhaustionRecoveryTime = 2f;
     [SerializeField] float SprintStaminaCostMultiplier = 1f;
     [SerializeField] float GlideStaminaCostMultiplier = 2f;
+    [SerializeField] float DashStaminaCost = 1.5f;
+    [SerializeField] float DoubleJumpStaminaCost = 1;
+    [SerializeField] float StaminaRegenMultiplier = 2f;
 
     //Dashing
     [Header("Dashing")]
@@ -67,7 +70,6 @@ public class Player : MonoBehaviour
     [SerializeField] float EarlyEndJumpGravityBoost = 1.5f;
     [Tooltip("The extra power of future jumps (Is a multiplication factor)")]
     [SerializeField] float DoubleJumpPower = 1.5f;
-    [SerializeField] float DoubleJumpStaminaCost = 1;
     [Tooltip("Just how terrible do you want to make the hitboxes?")]
     [SerializeField] float HeadHitDistance = 0.03f;
 
@@ -329,11 +331,12 @@ public class Player : MonoBehaviour
     private void UpdateDash()
     {
         //Detects if the player is holding down the dash key and is able to dash
-        if (Input.GetKeyDown(DashKey) && Velocity != 0 && DashCDLeft <= 0) 
+        if (Input.GetKeyDown(DashKey) && Velocity != 0 && DashCDLeft <= 0 && CurrentStamina > DashStaminaCost) 
         {
             IsDashing = true;
             DashLeft = DashPower;
             DashCDLeft = DashCooldown;
+            CurrentStamina -= DashStaminaCost;
         }
 
         //Checks if the player is dashing
@@ -474,7 +477,7 @@ public class Player : MonoBehaviour
             //regenerate stamina if the player has not sprinted for long enough
             if (NoSprintTime > StaminaRecoveryTime )
             {
-                CurrentStamina += Time.deltaTime;
+                CurrentStamina += Time.deltaTime * StaminaRegenMultiplier;
             }
         }
         //If the player is at 0 stamina
@@ -485,7 +488,7 @@ public class Player : MonoBehaviour
             //Increase their stamina if they have recovered from their exhaustion time
             if (NoSprintTime > ExhaustionRecoveryTime)
             {
-                CurrentStamina += Time.deltaTime;
+                CurrentStamina += Time.deltaTime * StaminaRegenMultiplier;
                 IsExhausted = false;
             }
         }

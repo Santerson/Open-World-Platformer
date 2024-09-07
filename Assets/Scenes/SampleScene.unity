@@ -3272,9 +3272,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1373427641751423887, guid: 0b43e0b1c3a673a4597fb89192f57ca5, type: 3}
+      propertyPath: m_SortingOrder
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1477559880518568771, guid: 0b43e0b1c3a673a4597fb89192f57ca5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.27
+      objectReference: {fileID: 0}
     - target: {fileID: 1945384570188254100, guid: 0b43e0b1c3a673a4597fb89192f57ca5, type: 3}
       propertyPath: MaxStamina
-      value: 8
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1945384570188254100, guid: 0b43e0b1c3a673a4597fb89192f57ca5, type: 3}
+      propertyPath: StaminaRegenMultiplier
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4847482658713633848, guid: 0b43e0b1c3a673a4597fb89192f57ca5, type: 3}
+      propertyPath: m_SortingOrder
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7047416506046926985, guid: 0b43e0b1c3a673a4597fb89192f57ca5, type: 3}
       propertyPath: m_Name
@@ -3319,6 +3335,10 @@ PrefabInstance:
     - target: {fileID: 8363561270810120414, guid: 0b43e0b1c3a673a4597fb89192f57ca5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8974384118064798368, guid: 0b43e0b1c3a673a4597fb89192f57ca5, type: 3}
+      propertyPath: m_LinearDrag
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
