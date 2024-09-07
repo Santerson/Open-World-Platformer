@@ -22,7 +22,7 @@ public class GlideMeter : MonoBehaviour
     void Update()
     {
         if (RefRenderer == null) return;
-        Glide = FindObjectOfType<Player>().GlideTimeLeft;
+        Glide = FindObjectOfType<Player>().TimeSpentGliding;
         if (Glide >= 2 || Glide <= 0)
         {
             RefRenderer.enabled = false;

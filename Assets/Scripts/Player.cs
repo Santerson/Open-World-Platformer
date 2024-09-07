@@ -20,8 +20,8 @@ public class Player : MonoBehaviour
     [Tooltip("The amount of time the player can't move before being considered 'idle'")]
     [SerializeField] float IdleTimeoutTime = 2f;
 
-    //Sprinting
-    [Header("Sprinting")]
+    //Stamina and Sprint
+    [Header("Stamina and Sprint")]
     [Tooltip("The multiplier to player speed if they are sprinting")]
     [SerializeField] float SprintMultiplier = 1.3f;
     [Tooltip("The amount of time the player can run for (in seconds)")]
@@ -31,6 +31,7 @@ public class Player : MonoBehaviour
     [Tooltip("The amount of time after running out of Stamina before recovering Stamina (in seconds)")]
     [SerializeField] float ExhaustionRecoveryTime = 2f;
     [SerializeField] float SprintStaminaCostMultiplier = 1f;
+    [SerializeField] float GlideStaminaCostMultiplier = 2f;
 
     //Dashing
     [Header("Dashing")]
@@ -66,6 +67,7 @@ public class Player : MonoBehaviour
     [SerializeField] float EarlyEndJumpGravityBoost = 1.5f;
     [Tooltip("The extra power of future jumps (Is a multiplication factor)")]
     [SerializeField] float DoubleJumpPower = 1.5f;
+    [SerializeField] float DoubleJumpStaminaCost = 1;
     [Tooltip("Just how terrible do you want to make the hitboxes?")]
     [SerializeField] float HeadHitDistance = 0.03f;
 
@@ -73,11 +75,8 @@ public class Player : MonoBehaviour
     [Header("Gliding")]
     [Tooltip("The rate at which the player falls while gliding")]
     [SerializeField] float GlideGravity = 0.01f;
-    [Tooltip("The amount of time the player can spend gliding before giving out")]
-    [SerializeField] float GlideTime = 2.0f;
     [Tooltip("Resets the glide if the glide button is released mid air")]
     [SerializeField] bool ResetGlideOnKeyUp = false;
-    [SerializeField] float GlideStaminaCostMultiplier = 2f;
 
     //Sword
     [Header("Sword")]
@@ -163,7 +162,7 @@ public class Player : MonoBehaviour
 
     //Public cooldowns
     public float DashCDLeft { get; private set; }
-    public float GlideTimeLeft { get; private set; }
+    public float TimeSpentGliding { get; private set; }
     public float CurrentStamina { get; private set; }
 
 
@@ -181,7 +180,6 @@ public class Player : MonoBehaviour
     int JumpsLeft = 0;
 
     bool IsUpwardAcceleration = false;
-    bool DoubleJumpReady = false;
 
     //Gliding
 
@@ -492,9 +490,6 @@ public class Player : MonoBehaviour
             }
         }
 
-        //Setting IsExhausted
-        IsExhausted = CurrentStamina <= 0;
-
         //Capping stamina
         if (CurrentStamina > MaxStamina)
         {
@@ -525,21 +520,19 @@ public class Player : MonoBehaviour
     {
 
         //Checks if the player can jump
-        if (Input.GetKeyDown(JumpKey) && JumpsLeft > 0)
+        if (Input.GetKeyDown(JumpKey) && JumpsLeft == Jumps)
         {
-            //Jumps the player and reduces their jumps left
             --JumpsLeft;
-            if (DoubleJumpReady)
-            {
-                //increases jump height if the player is doing a double jump
-                Gravity = JumpHeight * DoubleJumpPower;
-            }
-            else
-            {
-                Gravity = JumpHeight;
-                DoubleJumpReady = true;
-            }
+            Gravity = JumpHeight;
+            
             IsUpwardAcceleration = true;
+        }
+        else if (Input.GetKeyDown(JumpKey) && JumpsLeft > 0 && CurrentStamina > DoubleJumpStaminaCost)
+        {
+            --JumpsLeft;
+            //increases jump height if the player is doing a double jump
+            Gravity = JumpHeight * DoubleJumpPower;
+            CurrentStamina -= DoubleJumpStaminaCost;
         }
         //Slows down the player more dramatically if they stop holding space while jumping
         if (!Input.GetKey(JumpKey) && IsUpwardAcceleration)
@@ -569,7 +562,6 @@ public class Player : MonoBehaviour
         {
             //Resets jumps
             JumpsLeft = Jumps;
-            DoubleJumpReady = false;
         }
 
         //Checks if the player is actually touching the ground (using a very small raycast)
@@ -611,7 +603,7 @@ public class Player : MonoBehaviour
     }
     private void Glide()
     {
-        if (Input.GetKey(GlideKey) && !IsLanded && GlideTimeLeft > 0)
+        if (Input.GetKey(GlideKey) && !IsLanded && !IsExhausted)
         {
             IsGliding = true;
         }
@@ -620,15 +612,10 @@ public class Player : MonoBehaviour
             IsGliding = false;
         }
 
-        if (Input.GetKeyUp(GlideKey) && ResetGlideOnKeyUp)
-        {
-            GlideTimeLeft = 0;
-        }
-
         if (IsGliding)
         {
-            GlideTimeLeft -= Time.deltaTime;
-            if (GlideTimeLeft < 0)
+            TimeSpentGliding += Time.deltaTime;
+            if (IsExhausted)
             {
                 IsGliding = false;
             }
@@ -636,11 +623,12 @@ public class Player : MonoBehaviour
 
         if (IsLanded)
         {
-            GlideTimeLeft = GlideTime;
+            TimeSpentGliding = 0;
             CameraStartedGliding = false;
+            IsGliding = false;
         }
 
-        if (GlideTime - GlideTimeLeft > TimeToCameraStayDownAfterGlide && IsGliding)
+        if (TimeSpentGliding > TimeToCameraStayDownAfterGlide && IsGliding)
         {
             CameraStartedGliding = true;
         }
@@ -760,5 +748,8 @@ public class Player : MonoBehaviour
 
         //Update IsFalling
         IsFalling = Gravity < 0;
+
+        //Setting IsExhausted
+        IsExhausted = CurrentStamina <= 0;
     }
 }
