@@ -9,6 +9,7 @@ public class Sword : MonoBehaviour
 {
     [SerializeField] float SwingSpeedMultiplier = 100f;
     [SerializeField] float SwordSwingAngleMax = 165f;
+    [SerializeField] float SwordBaseDamage = 1f;
     float LastLookingDir = 1;
     float Rotated = 0;
 
@@ -40,6 +41,31 @@ public class Sword : MonoBehaviour
         UpdateSwingSword();
     }
 
+
+    
+
+    public void SwingSword()
+    {
+        IsSwinging = true;
+    }
+
+    public void HitEnemy(GameObject Enemy)
+    {
+        if (Enemy == null)
+        {
+            Debug.LogError("Somehow hit a null target");
+            return;
+        }
+        Enemy.GetComponent<Enemy>().TakenDamage(SwordBaseDamage);
+    }
+
+
+
+    //Swinging animation
+
+    /// <summary>
+    /// Determines which animation function must play
+    /// </summary>
     private void UpdateSwingSword()
     {
         //Returns if the player isn't attacking
@@ -55,6 +81,9 @@ public class Sword : MonoBehaviour
         
     }
 
+    /// <summary>
+    /// Animates the sword swinging up
+    /// </summary>
     private void SwingSwordUp()
     {
         //Create a before rotaion variable
@@ -79,6 +108,9 @@ public class Sword : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Animates the sword swinging down
+    /// </summary>
     private void SwingSwordDown()
     {
         //Create a before rotaion variable
@@ -103,6 +135,9 @@ public class Sword : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Puts the sword in front of the player's hand
+    /// </summary>
     private void UpdateOrientSword()
     {
         //Finds the player's direction
@@ -123,23 +158,6 @@ public class Sword : MonoBehaviour
             LastLookingDir = direction;
             //Changes the quaternion of the rotation
             transform.rotation = new Quaternion(transform.rotation.x, transform.rotation.y, -transform.rotation.z, transform.rotation.w);
-        }
-    }
-
-    public void SwingSword()
-    {
-        IsSwinging = true;
-    }
-
-    public void HitEnemy(GameObject Enemy)
-    {
-        if (Enemy == null)
-        {
-            Debug.LogError("Somehow hit a null target");
-        }
-        if (Enemy.tag == "Enemy")
-        {
-            Destroy(Enemy);
         }
     }
 }

@@ -12,13 +12,14 @@ public class SwordCollider : MonoBehaviour
         {
             direction = 1;
         }
-        transform.position = new Vector2(FindObjectOfType<Player>().transform.position.x + 1.06f * direction, FindObjectOfType<Player>().transform.position.y);
+        transform.position = new Vector2(FindObjectOfType<Player>().transform.position.x + 1.5f * direction, FindObjectOfType<Player>().transform.position.y);
     }
 
 
     private void OnTriggerStay2D(Collider2D collision)
     {
-        if (FindObjectOfType<Player>().IsSwordSwing)
+        Debug.Log($"Hit {collision.gameObject}");
+        if (FindObjectOfType<Player>().IsSwordSwing && collision.tag == "Enemy")
         {
             FindObjectOfType<Sword>().HitEnemy(collision.gameObject);
         }

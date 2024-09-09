@@ -126,6 +126,8 @@ public class Player : MonoBehaviour
     [SerializeField] KeyCode GlideKey = KeyCode.C;
     [Tooltip("Default: LeftMouse (0)")]
     [SerializeField] int AttackButton = 0;
+    [Tooltip("default: RightMouse(1)")]
+    [SerializeField] int StrongAttackButton = 1;
 
     //Position changes each frame (Velocity = x, Gravity = y)
     public float Velocity { get; private set; }
@@ -161,6 +163,7 @@ public class Player : MonoBehaviour
     public bool IsLookingUp { get; private set; }
     public bool IsLookingDown { get; private set; }
     public bool IsSwordSwing { get; private set; }
+    public bool IsStrongSwordSwing { get; private set; }
 
     //Public cooldowns
     public float DashCDLeft { get; private set; }
@@ -188,13 +191,13 @@ public class Player : MonoBehaviour
     //Dashing
     float DashLeft = 0;
     float DashRolloutLeft = 0;
-    
+
     bool SlowDownDash = false;
 
     //Sword
     float SwordAttackingTimeLeft;
     float SwordReloadingTimeLeft;
-        
+
     //Camera
     float TimeUntilLookUp = 0;
     float TimeUntilLookDown = 0;
@@ -215,7 +218,7 @@ public class Player : MonoBehaviour
         UpdateDash();
         UpdateIdleTimeout();
         UpdateAttack();
-        transform.position = new Vector2(transform.position.x + Velocity * Time.deltaTime * 300, transform.position.y + Gravity  * (Time.deltaTime * 100));
+        transform.position = new Vector2(transform.position.x + Velocity * Time.deltaTime * 300, transform.position.y + Gravity * (Time.deltaTime * 100));
     }
 
 
@@ -243,8 +246,8 @@ public class Player : MonoBehaviour
                 Velocity = MaxSpeed * sprintMultiplier * Direction;
             }
         }
-        
-            //Moving the player
+
+        //Moving the player
         //Defining rates of acceleration and deceleration
         float accelerationRate = Acceleration * Time.deltaTime;
         float decelerationRate = Deceleration * Time.deltaTime;
@@ -279,7 +282,7 @@ public class Player : MonoBehaviour
     {
 
         //Rightward movement
-        if (Input.GetKey(RightKey) && Velocity < MaxSpeed * sprintMultiplier && !IsDashing)
+        if (Input.GetKey(RightKey) && Velocity < MaxSpeed * sprintMultiplier && !IsDashing && !IsStrongSwordSwing)
         {
             //Checks if the player is turning around or accelerating from nothing
             if (Velocity < 0)
@@ -294,7 +297,7 @@ public class Player : MonoBehaviour
             RawInputDirection = 1;
         }
         //Leftward movement
-        if (Input.GetKey(LeftKey) && Velocity > -MaxSpeed * sprintMultiplier && !IsDashing)
+        if (Input.GetKey(LeftKey) && Velocity > -MaxSpeed * sprintMultiplier && !IsDashing && !IsStrongSwordSwing)
         {
             //Checks if the player is turning around or accelerating from nothing
             if (Velocity > 0)
@@ -309,7 +312,7 @@ public class Player : MonoBehaviour
             RawInputDirection = -1;
         }
         //Checks if player is not moving or if they are moving faster than they should be
-        if ((!Input.GetKey(LeftKey) && !Input.GetKey(RightKey) || Input.GetKey(LeftKey) && Input.GetKey(RightKey)) && !IsDashing)
+        if (((!Input.GetKey(LeftKey) && !Input.GetKey(RightKey) || Input.GetKey(LeftKey) && Input.GetKey(RightKey)) && !IsDashing) || IsStrongSwordSwing)
         {
             //Decelerates the player depenign on which way they are moving
             if (Velocity > 0)
@@ -331,7 +334,7 @@ public class Player : MonoBehaviour
     private void UpdateDash()
     {
         //Detects if the player is holding down the dash key and is able to dash
-        if (Input.GetKeyDown(DashKey) && Velocity != 0 && DashCDLeft <= 0 && CurrentStamina > DashStaminaCost) 
+        if (Input.GetKeyDown(DashKey) && Velocity != 0 && DashCDLeft <= 0 && CurrentStamina > DashStaminaCost)
         {
             IsDashing = true;
             DashLeft = DashPower;
@@ -366,7 +369,7 @@ public class Player : MonoBehaviour
                 IsDashing = false;
             }
         }
-        
+
         //If the dash is complete, we continue to move the player a bit, slower so the stop isn't as jarring
         if (SlowDownDash)
         {
@@ -374,9 +377,9 @@ public class Player : MonoBehaviour
             Velocity += DashLength * Time.deltaTime / DashRolloutDivider * Direction;
             //Decreases the amount of time left in the dash rollout
             DashRolloutLeft -= Time.deltaTime;
-            if (DashRolloutLeft <= 0) 
+            if (DashRolloutLeft <= 0)
             {
-                
+
                 SlowDownDash = false;
             }
         }
@@ -389,7 +392,7 @@ public class Player : MonoBehaviour
     }
     private void LookUpAndDown()
     {
-        
+
         if (Input.GetKey(LookUpKey) && RawInputDirection == 0 && Gravity == 0)
         {
             TimeUntilLookUp += Time.deltaTime;
@@ -475,13 +478,13 @@ public class Player : MonoBehaviour
             //increase the time without sprinting
             NoSprintTime += Time.deltaTime;
             //regenerate stamina if the player has not sprinted for long enough
-            if (NoSprintTime > StaminaRecoveryTime )
+            if (NoSprintTime > StaminaRecoveryTime)
             {
                 CurrentStamina += Time.deltaTime * StaminaRegenMultiplier;
             }
         }
         //If the player is at 0 stamina
-        else if (CurrentStamina < MaxStamina) 
+        else if (CurrentStamina < MaxStamina)
         {
             //Increase their no sprint time
             NoSprintTime += Time.deltaTime;
@@ -527,7 +530,7 @@ public class Player : MonoBehaviour
         {
             --JumpsLeft;
             Gravity = JumpHeight;
-            
+
             IsUpwardAcceleration = true;
         }
         else if (Input.GetKeyDown(JumpKey) && JumpsLeft > 0 && CurrentStamina > DoubleJumpStaminaCost)
@@ -638,7 +641,7 @@ public class Player : MonoBehaviour
     }
 
 
-    
+
     //Camera Related Functions
     private void UpdateIdleTimeout()
     {
@@ -696,6 +699,13 @@ public class Player : MonoBehaviour
     //Sword Functions
     private void UpdateAttack()
     {
+        StandardAttack();
+
+        StrongAttack();
+    }
+
+    private void StandardAttack()
+    {
         //Checks if the player is attacking and if they are able to attack
         if (Input.GetMouseButton(AttackButton) && SwordReloadingTimeLeft <= 0)
         {
@@ -724,6 +734,13 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void StrongAttack()
+    {
+        if (Input.GetMouseButtonDown(StrongAttackButton))
+        {
+            IsStrongSwordSwing = true;
+        }
+    }
 
     //Misc. Functions
     bool IsGrounded(RaycastHit2D hitInfo)

@@ -1,14 +1,12 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
-public class Camera : MonoBehaviour
+public class CameraMovement : MonoBehaviour
 {
-    [SerializeField] Vector2 FollowingOffset;
+    [SerializeField] Vector2 FollowingOffset = new Vector2(0.75f, 1);
     [SerializeField] GameObject FollowingObject;
-    [SerializeField] float SpeedDivider = 100f;
+    [SerializeField] float SpeedDivider = 20f;
     [SerializeField] float NeutralDivider = 2.5f;
     [SerializeField] float TimeLookingBeforeMove = 0.5f;
     float MaxYPos;
@@ -35,11 +33,7 @@ public class Camera : MonoBehaviour
     {
         if (FollowingObject == null) { return; }
         if (LookingDirection == 0) { LookingDirection = FindObjectOfType<Player>().RawInputNoZero; }
-        if (FindObjectOfType<Player>().IsStrongSwordSwing)
-        {
-            CalculateStrongSwordSwingPos();
-            return;
-        }
+
         //Get camera offset depending on what the player is doing
         float PlayerImposedOffsetMultiplierX = FindObjectOfType<Player>().CalculateCameraMultiplierX();
         float PlayerImposedOffsetMultiplierY = FindObjectOfType<Player>().CalculateCameraMultiplierY();
