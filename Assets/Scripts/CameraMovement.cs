@@ -63,12 +63,22 @@ public class CameraMovement : MonoBehaviour
 
     private void CalculateStrongSwordSwingPos()
     {
+        //TODO: FIX THIS SHIT
+        //make the camera go a certain distance away from the player in the direction of the mouse
         Vector2 mouse = Input.mousePosition;
         Vector3 mouseWorldPoint = Camera.main.ScreenToWorldPoint(new Vector3(mouse.x, mouse.y, 10));
         Vector2 playerPos = FindObjectOfType<Player>().transform.position;
-        mouseWorldPoint.Normalize();
-        Vector3 newPos = new Vector3(playerPos.x +  mouseWorldPoint.x * 4, playerPos.y + mouseWorldPoint.y * 4, 0);
-        TargetPos = newPos;
+        Vector2 mousePos = new Vector2(playerPos.x + mouseWorldPoint.x, playerPos.y + mouseWorldPoint.y);
+        mousePos.Normalize();
+
+        Debug.DrawLine(playerPos, mousePos);
+        Debug.DrawLine(playerPos, mouseWorldPoint, Color.green);
+
+        float lX = Mathf.Clamp(mouseWorldPoint.x + playerPos.x, -1, 1);
+        float lY = Mathf.Clamp(mouseWorldPoint.y + playerPos.y, -1, 1);
+
+        Vector2 target = new Vector2(playerPos.x + lX, playerPos.y + lY);
+        TargetPos = target;
     }
 
     private void MoveCameraTowardsTarget()
