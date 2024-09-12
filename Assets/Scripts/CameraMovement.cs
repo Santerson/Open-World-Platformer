@@ -33,6 +33,11 @@ public class CameraMovement : MonoBehaviour
     {
         if (FollowingObject == null) { return; }
         if (LookingDirection == 0) { LookingDirection = FindObjectOfType<Player>().RawInputNoZero; }
+        if (FindObjectOfType<Player>().IsStrongSwordSwing) 
+        {
+            CalculateStrongSwordSwingPos();
+            return;
+        }
 
         //Get camera offset depending on what the player is doing
         float PlayerImposedOffsetMultiplierX = FindObjectOfType<Player>().CalculateCameraMultiplierX();
@@ -59,6 +64,11 @@ public class CameraMovement : MonoBehaviour
     private void CalculateStrongSwordSwingPos()
     {
         Vector2 mouse = Input.mousePosition;
+        Vector3 mouseWorldPoint = Camera.main.ScreenToWorldPoint(new Vector3(mouse.x, mouse.y, 10));
+        Vector2 playerPos = FindObjectOfType<Player>().transform.position;
+        mouseWorldPoint.Normalize();
+        Vector3 newPos = new Vector3(playerPos.x +  mouseWorldPoint.x * 4, playerPos.y + mouseWorldPoint.y * 4, 0);
+        TargetPos = newPos;
     }
 
     private void MoveCameraTowardsTarget()

@@ -282,7 +282,7 @@ public class Player : MonoBehaviour
     {
 
         //Rightward movement
-        if (Input.GetKey(RightKey) && Velocity < MaxSpeed * sprintMultiplier && !IsDashing && !IsStrongSwordSwing)
+        if (Input.GetKey(RightKey) && Velocity < MaxSpeed * sprintMultiplier && !IsDashing)
         {
             //Checks if the player is turning around or accelerating from nothing
             if (Velocity < 0)
@@ -297,7 +297,7 @@ public class Player : MonoBehaviour
             RawInputDirection = 1;
         }
         //Leftward movement
-        if (Input.GetKey(LeftKey) && Velocity > -MaxSpeed * sprintMultiplier && !IsDashing && !IsStrongSwordSwing)
+        if (Input.GetKey(LeftKey) && Velocity > -MaxSpeed * sprintMultiplier && !IsDashing)
         {
             //Checks if the player is turning around or accelerating from nothing
             if (Velocity > 0)
@@ -312,7 +312,7 @@ public class Player : MonoBehaviour
             RawInputDirection = -1;
         }
         //Checks if player is not moving or if they are moving faster than they should be
-        if (((!Input.GetKey(LeftKey) && !Input.GetKey(RightKey) || Input.GetKey(LeftKey) && Input.GetKey(RightKey)) && !IsDashing) || IsStrongSwordSwing)
+        if (((!Input.GetKey(LeftKey) && !Input.GetKey(RightKey) || Input.GetKey(LeftKey) && Input.GetKey(RightKey)) && !IsDashing))
         {
             //Decelerates the player depenign on which way they are moving
             if (Velocity > 0)
@@ -736,9 +736,13 @@ public class Player : MonoBehaviour
 
     private void StrongAttack()
     {
-        if (Input.GetMouseButtonDown(StrongAttackButton))
+        if (Input.GetMouseButton(StrongAttackButton))
         {
             IsStrongSwordSwing = true;
+        }
+        else
+        {
+            IsStrongSwordSwing = false;
         }
     }
 
