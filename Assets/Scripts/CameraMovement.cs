@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class CameraMovement : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class CameraMovement : MonoBehaviour
     [SerializeField] float SpeedDivider = 20f;
     [SerializeField] float NeutralDivider = 2.5f;
     [SerializeField] float TimeLookingBeforeMove = 0.5f;
+    [SerializeField] float StrongAttackMaxDistance = 3;
     float MaxYPos;
     float LookingDirection = 0;
     float TimeSpentLooking = 0;
@@ -65,20 +67,22 @@ public class CameraMovement : MonoBehaviour
     {
         //TODO: FIX THIS SHIT
         //make the camera go a certain distance away from the player in the direction of the mouse
-        Vector2 mouse = Input.mousePosition;
-        Vector3 mouseWorldPoint = Camera.main.ScreenToWorldPoint(new Vector3(mouse.x, mouse.y, 10));
         Vector2 playerPos = FindObjectOfType<Player>().transform.position;
-        Vector2 mousePos = new Vector2(playerPos.x + mouseWorldPoint.x, playerPos.y + mouseWorldPoint.y);
-        mousePos.Normalize();
 
-        Debug.DrawLine(playerPos, mousePos);
-        Debug.DrawLine(playerPos, mouseWorldPoint, Color.green);
+        // Get the mouse position in world space
+        Vector3 mousePos = Input.mousePosition;
 
-        float lX = Mathf.Clamp(mouseWorldPoint.x + playerPos.x, -1, 1);
-        float lY = Mathf.Clamp(mouseWorldPoint.y + playerPos.y, -1, 1);
+        Vector3 worldMousePos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 10));
 
-        Vector2 target = new Vector2(playerPos.x + lX, playerPos.y + lY);
-        TargetPos = target;
+        // Calculate the direction from the target to the mouse
+        Vector2 direction = ((Vector2)(worldMousePos) - playerPos).normalized;
+
+        // Set the camera's position at a distance of 'radius' in that direction
+        Vector3 newPosition = playerPos + direction * 5;
+
+        // Update camera position
+        TargetPos    = newPosition;
+
     }
 
     private void MoveCameraTowardsTarget()
