@@ -18,7 +18,7 @@ public class SwordCollider : MonoBehaviour
 
     private void OnTriggerStay2D(Collider2D collision)
     {
-        if (FindObjectOfType<Player>().IsSwordSwing && collision.tag == "Enemy")
+        if (FindObjectOfType<Player>().IsSwordSwing && collision.tag == "Enemy" && !FindObjectOfType<Player>().IsStrongSwordSwing)
         {
             FindObjectOfType<Sword>().HitEnemy(collision.gameObject);
         }

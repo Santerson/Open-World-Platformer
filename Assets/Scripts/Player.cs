@@ -84,6 +84,7 @@ public class Player : MonoBehaviour
     [Header("Sword")]
     [SerializeField] public float SwordSwingDuration = 1f;
     [SerializeField] public float SwordReloadTime = 1.5f;
+    [SerializeField] float StrongSwordSwingHitboxDistance = 1;
 
     //Camera
     [Header("Camera")]
@@ -128,6 +129,10 @@ public class Player : MonoBehaviour
     [SerializeField] int AttackButton = 0;
     [Tooltip("default: RightMouse(1)")]
     [SerializeField] int StrongAttackButton = 1;
+
+    //Colliders
+    [Header("Colliders")]
+    [SerializeField] GameObject StrongSwordSwingCollider = null;
 
     //Position changes each frame (Velocity = x, Gravity = y)
     public float Velocity { get; private set; }
@@ -207,6 +212,10 @@ public class Player : MonoBehaviour
     private void Start()
     {
         CurrentStamina = MaxStamina;
+        if (StrongSwordSwingCollider == null)
+        {
+            Debug.LogError("No strong sword swing collider attached to the player object");
+        }
     }
 
     void Update()
@@ -430,18 +439,45 @@ public class Player : MonoBehaviour
     }
     private void CheckIfPlayerIsTooCloseToWalls()
     {
+        //TODO: THIS IS FUCKED, make it so the player stops when near a collider
+
+
         //Creating an origin for raycasts
         Vector2 lowOrigin = new Vector2(transform.position.x + 0.5001f, transform.position.y - 0.5f);
         Vector2 highOrigin = new Vector2(transform.position.x + 0.5001f, transform.position.y + 0.5f);
-
+        RaycastHit2D lowRightHit = Physics2D.Raycast(lowOrigin, Vector2.right, DistanceFromWalls, JumpsLeft);
+        RaycastHit2D lowLeftHit = Physics2D.Raycast(new Vector2(transform.position.x - 0.5001f, lowOrigin.y), Vector2.left, DistanceFromWalls);
+        RaycastHit2D upRightHit = Physics2D.Raycast(highOrigin, Vector2.right, DistanceFromWalls);
+        RaycastHit2D upLeftHit = Physics2D.Raycast(new Vector2(transform.position.x - 0.5001f, highOrigin.y), Vector2.left, DistanceFromWalls);
         //Disallows the player to move into walls by using a raycast
         //(Technically, you can, but the wall will push you out, and it looks jank. This fixes that)
-        if (Physics2D.Raycast(lowOrigin, Vector2.right, DistanceFromWalls) && Input.GetKey(KeyCode.D) ||
-            Physics2D.Raycast(new Vector2(transform.position.x - 0.5001f, lowOrigin.y), Vector2.left, DistanceFromWalls) && Input.GetKey(KeyCode.A) ||
-            Physics2D.Raycast(highOrigin, Vector2.right, DistanceFromWalls) && Input.GetKey(KeyCode.D) ||
-            Physics2D.Raycast(new Vector2(transform.position.x - 0.5001f, highOrigin.y), Vector2.left, DistanceFromWalls) && Input.GetKey(KeyCode.A))
+        if (lowRightHit && Input.GetKey(KeyCode.D))
         {
-            Velocity = 0;
+            if (!lowRightHit.transform.tag.Equals("Collider"))
+            {
+                Velocity = 0;
+            }
+        }
+        if (lowLeftHit && Input.GetKey(KeyCode.A))
+        {
+            if (!lowLeftHit.transform.tag.Equals("Collider"))
+            {
+                Velocity = 0;
+            }
+        }
+        if (upRightHit && Input.GetKey(KeyCode.D))
+        {
+            if (!upRightHit.transform.tag.Equals("Collider"))
+            {
+                Velocity = 0;
+            }
+        }
+        if (upLeftHit && Input.GetKey(KeyCode.A))
+        {
+            if (!upLeftHit.transform.tag.Equals("Collider"))
+            {
+                Velocity = 0;
+            }
         }
     }
     private void CalculateStamina()
@@ -556,6 +592,7 @@ public class Player : MonoBehaviour
 
         //Checks if the player is in the range to recover their jumps
         RaycastHit2D hit = Physics2D.Raycast(origin, direction, GroundedGraceDistance);
+        Debug.DrawRay(origin, direction, Color.red, GroundedGraceDistance);
 
         IsLanded = false;
         if (IsGrounded(hit) && !IsUpwardAcceleration && Physics2D.Raycast(origin, direction, GroundedGraceDistance))
@@ -571,7 +608,8 @@ public class Player : MonoBehaviour
         }
 
         //Checks if the player is actually touching the ground (using a very small raycast)
-        if (Physics2D.Raycast(origin, direction, HeightOffGround) && Gravity < 0)
+        RaycastHit2D groundedHit = Physics2D.Raycast(origin, direction, HeightOffGround);
+        if (groundedHit && Gravity < 0)
         {
             //Checks if the object is considered ground
             if (IsGrounded(hit))
@@ -744,13 +782,41 @@ public class Player : MonoBehaviour
         {
             IsStrongSwordSwing = false;
         }
+
+        if (IsStrongSwordSwing)
+        {
+            OrbitStrongSwordSwingCollider();
+        }
+    }
+
+    void OrbitStrongSwordSwingCollider()
+    {
+        Vector2 playerPos = gameObject.transform.position;
+
+        // Get the mouse position in world space
+        Vector3 mousePos = Input.mousePosition;
+
+        Vector3 worldMousePos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 10));
+
+        // Calculate the direction from the target to the mouse
+        Vector2 direction = ((Vector2)(worldMousePos) - playerPos).normalized;
+
+        // Set the camera's position to the set distance in that direction
+        Vector3 newPosition = playerPos + direction * StrongSwordSwingHitboxDistance;
+
+        GameObject.Find("StrongSwingCollider").transform.position = newPosition;
     }
 
     //Misc. Functions
     bool IsGrounded(RaycastHit2D hitInfo)
     {
-        bool bCloseToGround = hitInfo.distance < GroundedGraceDistance;
-        return bCloseToGround;
+        if (hitInfo == false) return true;
+        if (hitInfo.transform.gameObject.Equals(StrongSwordSwingCollider))
+        {
+            return false;
+        }
+        bool closeToGround = hitInfo.distance < GroundedGraceDistance;
+        return closeToGround;
     }
     private void UpdateVariables()
     {
