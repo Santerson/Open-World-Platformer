@@ -1,163 +1,66 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using Unity.VisualScripting.Antlr3.Runtime;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class Sword : MonoBehaviour
 {
-    [SerializeField] float SwingSpeedMultiplier = 100f;
-    [SerializeField] float SwordSwingAngleMax = 165f;
-    [SerializeField] float SwordBaseDamage = 1f;
-    float LastLookingDir = 1;
-    float Rotated = 0;
-
-    float SwordSwingDuration;
-    float SwordSwingCooldown;
-
-    Quaternion BaseRotation;
-
-    public bool IsSwinging { get; private set; }
-    public bool IsRecoiling { get; private set; }
+    [SerializeField] GameObject RefSwordCollider = null;
+    SpriteRenderer RefRenderer = null;
+    Player RefPlayer = null;
     
-
-    private void Start()
+    bool IsActive = false;
+    // Start is called before the first frame update
+    void Start()
     {
-        SwordSwingDuration = FindObjectOfType<Player>().SwordSwingDuration;
-        SwordSwingCooldown = FindObjectOfType<Player>().SwordReloadTime;
+        RefPlayer = FindObjectOfType<Player>().GetComponent<Player>();
+        RefRenderer = GetComponent<SpriteRenderer>();
 
-        IsSwinging = false;
-        IsRecoiling = false;
-        BaseRotation = transform.rotation;
+        if (RefRenderer == null)
+        {
+            Debug.LogError("Could not pull Renderer from attached thingys");
+        }
+        if (RefPlayer == null)
+        {
+            Debug.LogError("Somehow, the player has no player object");
+        }
+        if (RefSwordCollider == null)
+        {
+            Debug.LogError("No sword Collider attached to sword object!");
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        SwordSwingDuration = FindObjectOfType<Player>().SwordSwingDuration;
-        SwordSwingCooldown = FindObjectOfType<Player>().SwordReloadTime;
-        UpdateOrientSword();
-        UpdateSwingSword();
+        CheckIfShow();
     }
 
-
-    
-
-    public void SwingSword()
+    void CheckIfShow()
     {
-        IsSwinging = true;
-    }
+        if (RefPlayer == null) { return; }
+        if (RefSwordCollider == null) { return; }
 
-    public void HitEnemy(GameObject Enemy)
-    {
-        if (Enemy == null)
+        List<string> heldItem = RefPlayer.HoldingObject;
+        string itemName = heldItem[0];
+        if (itemName.Equals("Sword"))
         {
-            Debug.LogError("Somehow hit a null target");
-            return;
+            Show();
         }
-        Enemy.GetComponent<Enemy>().TakenDamage(SwordBaseDamage);
-    }
-
-
-
-    //Swinging animation
-
-    /// <summary>
-    /// Determines which animation function must play
-    /// </summary>
-    private void UpdateSwingSword()
-    {
-        //Returns if the player isn't attacking
-        if (IsSwinging == true) 
+        else
         {
-            SwingSwordDown();
-        }
-
-        if (IsRecoiling == true)
-        {
-            SwingSwordUp();
-        }
-        
-    }
-
-    /// <summary>
-    /// Animates the sword swinging up
-    /// </summary>
-    private void SwingSwordUp()
-    {
-        //Create a before rotaion variable
-        float beforeRotate = transform.rotation.eulerAngles.z;
-
-        //Roates the sword so that it will rotate however much it needs to rotate so it reaches SwordSwingAngleMax at the end of SwordSwingDuration
-        transform.Rotate(0, 0, Time.deltaTime / SwordSwingCooldown * SwordSwingAngleMax * LastLookingDir);
-
-        //Create an after rotation variable
-        float afterRotate = transform.rotation.eulerAngles.z;
-
-        //Calculate how many angles were rotated (pos or neg)
-        Rotated += Mathf.Abs(beforeRotate - afterRotate);
-
-        //Check if the angles rotated is equal to SwordSwingAngleMax
-        if (Rotated > SwordSwingAngleMax)
-        {
-            //Reset the sword and rotation
-            transform.rotation = new Quaternion(BaseRotation.x, BaseRotation.y, BaseRotation.z * LastLookingDir, BaseRotation.w);
-            Rotated = 0;
-            IsRecoiling = false;
+            Hide();
         }
     }
 
-    /// <summary>
-    /// Animates the sword swinging down
-    /// </summary>
-    private void SwingSwordDown()
+    void Show()
     {
-        //Create a before rotaion variable
-        float beforeRotate = transform.rotation.eulerAngles.z;
-
-        //Roates the sword so that it will rotate however much it needs to rotate so it reaches SwordSwingAngleMax at the end of SwordSwingDuration
-        transform.Rotate(0, 0, Time.deltaTime / SwordSwingDuration * SwordSwingAngleMax * -LastLookingDir);
-
-        //Create an after rotation variable
-        float afterRotate = transform.rotation.eulerAngles.z;
-
-        //Calculate how many angles were rotated (pos or neg)
-        Rotated += Mathf.Abs(beforeRotate - afterRotate);
-
-        //Check if the angles rotated is equal to SwordSwingAngleMax
-        if (Rotated > SwordSwingAngleMax)
-        {
-            //Reset the sword and rotation
-            Rotated = 0;
-            IsSwinging = false;
-            IsRecoiling = true;
-        }
+        RefRenderer.enabled = true;
+        IsActive = true;
     }
 
-    /// <summary>
-    /// Puts the sword in front of the player's hand
-    /// </summary>
-    private void UpdateOrientSword()
+    void Hide()
     {
-        //Finds the player's direction
-        float direction = FindObjectOfType<Player>().Direction;
-        if (direction == 0)
-        {   
-            //Resets it if the player has put in no input
-            direction = 1;
-        }
-
-        //Puts itself in the player's hand
-        transform.position = new Vector2(FindObjectOfType<Player>().transform.position.x + 0.65f * direction, FindObjectOfType<Player>().transform.position.y + 0.3f);
-        
-        //Rotates the sword if the player has rotated
-        if (direction != LastLookingDir)
-        {
-            //Resets last num
-            LastLookingDir = direction;
-            //Changes the quaternion of the rotation
-            transform.rotation = new Quaternion(transform.rotation.x, transform.rotation.y, -transform.rotation.z, transform.rotation.w);
-        }
+        RefRenderer.enabled = false;
+        IsActive = false;
     }
 }
