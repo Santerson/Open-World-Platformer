@@ -15,13 +15,4 @@ public class SwordCollider : MonoBehaviour
         transform.position = new Vector2(FindObjectOfType<Player>().transform.position.x + 1.5f * direction, FindObjectOfType<Player>().transform.position.y);
     }
 
-
-    private void OnTriggerStay2D(Collider2D collision)
-    {
-        if (FindObjectOfType<Player>().IsSwordSwing && collision.tag == "Enemy" && !FindObjectOfType<Player>().IsStrongSwordSwing)
-        {
-            //FindObjectOfType<Sword>().HitEnemy(collision.gameObject);
-        }
-    }
-
 }

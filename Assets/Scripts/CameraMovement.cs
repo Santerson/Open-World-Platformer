@@ -10,14 +10,21 @@ public class CameraMovement : MonoBehaviour
     [SerializeField] float SpeedDivider = 20f;
     [SerializeField] float NeutralDivider = 2.5f;
     [SerializeField] float TimeLookingBeforeMove = 0.5f;
-    [SerializeField] float StrongAttackMaxDistance = 3;
+    [SerializeField] float DistanceUntilSnap = 0.01f;
+    [SerializeField] float SwordMaxDistance = 3;
     float MaxYPos;
     float LookingDirection = 0;
     float TimeSpentLooking = 0;
     Vector2 TargetPos;
+    Player RefPlayer = null;
     // Start is called before the first frame update
     void Start()
     {
+        RefPlayer = FindObjectOfType<Player>().GetComponent<Player>();
+        if (RefPlayer == null)
+        {
+            Debug.LogError("Could not find a player object");
+        }
         if (FollowingObject == null)
         {
             Debug.LogError("Camera is following no object");
@@ -35,9 +42,9 @@ public class CameraMovement : MonoBehaviour
     {
         if (FollowingObject == null) { return; }
         if (LookingDirection == 0) { LookingDirection = FindObjectOfType<Player>().RawInputNoZero; }
-        if (FindObjectOfType<Player>().IsStrongSwordSwing) 
+        if (RefPlayer.HoldingObject[1].Equals("Sword"))
         {
-            CalculateStrongSwordSwingPos();
+            CalculateSwordSwingPos();
             return;
         }
 
@@ -55,15 +62,13 @@ public class CameraMovement : MonoBehaviour
         float xCameraOffset = followingTargetPos.x + FollowingOffset.x * invertFollowing * PlayerImposedOffsetMultiplierX;
         float yCameraOffset = followingTargetPos.y + FollowingOffset.y * PlayerImposedOffsetMultiplierY;
 
-
-        //Putting the newly created targetpos into the vec2 for target position
         TargetPos = new Vector2(xCameraOffset, yCameraOffset);
 
         //Red line is the player to the target position
         Debug.DrawLine(followingTargetPos, TargetPos, Color.red);
     }
 
-    private void CalculateStrongSwordSwingPos()
+    private void CalculateSwordSwingPos()
     {
         Vector2 playerPos = FindObjectOfType<Player>().transform.position;
 
@@ -76,9 +81,9 @@ public class CameraMovement : MonoBehaviour
         Vector2 direction = ((Vector2)(worldMousePos) - playerPos).normalized;
 
         // Set the camera's position to the set distance in that direction
-        Vector3 newPosition = playerPos + direction * StrongAttackMaxDistance;
+        Vector3 newPosition = playerPos + direction * SwordMaxDistance;
 
-        DebugExtensions.DrawCircle(playerPos, StrongAttackMaxDistance, Color.magenta, 32);
+        DebugExtensions.DrawCircle(playerPos, SwordMaxDistance, Color.magenta, 32);
         Debug.DrawLine(playerPos, worldMousePos, Color.blue);
         Debug.DrawLine(playerPos, newPosition, Color.green);
 
@@ -104,6 +109,15 @@ public class CameraMovement : MonoBehaviour
         //Moves a fraction of that each frame
         float newCameraPositionX = transform.position.x + (cameraMovement.x / SpeedDivider / neutralDivider) * Time.deltaTime * 100;
         float newCameraPositionY = transform.position.y + (cameraMovement.y / SpeedDivider) * Time.deltaTime * 100;
+
+        if (SUtilities.IsInRange(newCameraPositionX, TargetPos.x - DistanceUntilSnap, TargetPos.x + DistanceUntilSnap))
+        {
+            newCameraPositionX = TargetPos.x;
+        }
+        if (SUtilities.IsInRange(newCameraPositionY, TargetPos.y - DistanceUntilSnap, TargetPos.y + DistanceUntilSnap))
+            {
+                newCameraPositionY = TargetPos.y;
+            }
 
         transform.position = new Vector3(newCameraPositionX, newCameraPositionY, -10);
     }

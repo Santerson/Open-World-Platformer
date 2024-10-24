@@ -3,19 +3,19 @@ using UnityEngine;
 
 public static class DebugExtensions
 {
-    public static void DrawBox(Vector2 min, Vector2 max, Color color)
+    public static void DrawBox(Vector2 pos1, Vector2 pos2, Color color)
     {
-        Vector2 lowerRight = new Vector2(max.x, min.y);
-        Vector2 upperLeft = new Vector2(min.x, max.y);
-        Debug.DrawLine(min, lowerRight, color);
-        Debug.DrawLine(lowerRight, max, color);
-        Debug.DrawLine(max, upperLeft, color);
-        Debug.DrawLine(upperLeft, min, color);
+        Vector2 lowerRight = new Vector2(pos2.x, pos1.y);
+        Vector2 upperLeft = new Vector2(pos1.x, pos2.y);
+        Debug.DrawLine(pos1, lowerRight, color);
+        Debug.DrawLine(lowerRight, pos2, color);
+        Debug.DrawLine(pos2, upperLeft, color);
+        Debug.DrawLine(upperLeft, pos1, color);
     }
 
-    public static void DrawBox(Vector2 min, Vector2 max)
+    public static void DrawBox(Vector2 pos1, Vector2 pos2)
     {
-        DrawBox(min, max, Color.white);
+        DrawBox(pos1, pos2, Color.white);
     }
 
     public static void DrawCircle(Vector2 center, float radius, Color color, int numberOfPoints = 16)

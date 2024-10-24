@@ -11,6 +11,7 @@ public class Hotbar : MonoBehaviour
     /// Hotbar, full of 2d list
     /// STRING 1: object name
     /// STRING 2: object classification
+    /// STRING 3: multiplier
     /// </summary>
     public List<List<string>> HotbarContent = new List<List<string>>();
     public List<string> HeldItem;
@@ -19,9 +20,9 @@ public class Hotbar : MonoBehaviour
     void Start()
     {
         //Temporary code to be overridden once the game is created
-        HotbarContent.Add(new List<string> { "Sword" , "Sword"});
-        HotbarContent.Add(new List<string> { "Bow" , "Bow"});
-        HotbarContent.Add(new List<string> { "Shield" , "Shield"});
+        HotbarContent.Add(new List<string> { "Sword" , "Sword", "1"});
+        HotbarContent.Add(new List<string> { "Bow" , "Bow", "1"});
+        HotbarContent.Add(new List<string> { "Shield", "Shield", "1" });
         HeldItem = new List<string>() { "", ""};
     }
 
@@ -29,7 +30,7 @@ public class Hotbar : MonoBehaviour
     void Update()
     {
         CheckForHotbarInput();
-        Debug.Log(HeldItem);
+
     }
 
     void CheckForHotbarInput()

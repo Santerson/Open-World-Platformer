@@ -7,6 +7,7 @@ public class Sword : MonoBehaviour
     [SerializeField] GameObject RefSwordCollider = null;
     SpriteRenderer RefRenderer = null;
     Player RefPlayer = null;
+    SwordHitCollider RefSwordColliderScript = null;
     
     bool IsActive = false;
     // Start is called before the first frame update
@@ -14,7 +15,12 @@ public class Sword : MonoBehaviour
     {
         RefPlayer = FindObjectOfType<Player>().GetComponent<Player>();
         RefRenderer = GetComponent<SpriteRenderer>();
+        RefSwordColliderScript = RefSwordCollider.GetComponent<SwordHitCollider>();
 
+        if (RefSwordColliderScript == null)
+        {
+            Debug.LogError("Sword Collider Script not found!");
+        }
         if (RefRenderer == null)
         {
             Debug.LogError("Could not pull Renderer from attached thingys");
@@ -33,6 +39,7 @@ public class Sword : MonoBehaviour
     void Update()
     {
         CheckIfShow();
+        CheckIfKill();
     }
 
     void CheckIfShow()
@@ -62,5 +69,23 @@ public class Sword : MonoBehaviour
     {
         RefRenderer.enabled = false;
         IsActive = false;
+    }
+
+    void CheckIfKill()
+    {
+        if (Input.GetMouseButtonDown(0) && RefPlayer.HoldingObject[1].Equals("Sword"))
+        {
+            KillTargets();
+        }
+    }
+
+    void KillTargets()
+    {
+        List<GameObject> targets = RefSwordColliderScript.targets;
+        for (int i = targets.Count; i > 0; i--) 
+        {
+            GameObject enemy = targets[i - 1];
+            enemy.GetComponent<Enemy>().TakenDamage(1);
+        }
     }
 }

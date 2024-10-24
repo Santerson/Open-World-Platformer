@@ -169,7 +169,6 @@ public class Player : MonoBehaviour
     public bool IsLookingUp { get; private set; }
     public bool IsLookingDown { get; private set; }
     public bool IsSwordSwing { get; private set; }
-    public bool IsStrongSwordSwing { get; private set; }
     public List<string> HoldingObject { get; private set; }
 
     //Public cooldowns
@@ -453,7 +452,6 @@ public class Player : MonoBehaviour
     }
     private void CheckIfPlayerIsTooCloseToWalls()
     {
-        //TODO: THIS IS FUCKED, make it so the player stops when near a collider
 
 
         //Creating an origin for raycasts
@@ -608,8 +606,9 @@ public class Player : MonoBehaviour
         RaycastHit2D hit = Physics2D.Raycast(origin, direction, GroundedGraceDistance);
 
         IsLanded = false;
-        if (IsGrounded(hit) && !IsUpwardAcceleration && Physics2D.Raycast(origin, direction, GroundedGraceDistance) && !hit.transform.gameObject.CompareTag("Collider"))
+        if (IsGrounded(hit) && !IsUpwardAcceleration && Physics2D.Raycast(origin, direction, GroundedGraceDistance) && !hit.transform.CompareTag("Collider"))
         {
+            
             IsLanded = true;
         }
 
@@ -652,10 +651,14 @@ public class Player : MonoBehaviour
         origin = new Vector2(transform.position.x, transform.position.y + 1.001f);
         direction = Vector2.up;
 
+        RaycastHit2D roofHit = Physics2D.Raycast(origin, direction, HeadHitDistance);
         //Checking if the player hits their head on something above them
         if (Physics2D.Raycast(origin, direction, HeadHitDistance))
         {
-            Gravity = 0 - GravityIntensity;
+            if (!roofHit.transform.CompareTag("Collider"))
+            {
+                Gravity = 0 - GravityIntensity;
+            }
         }
     }
     private void Glide()
@@ -839,14 +842,9 @@ public class Player : MonoBehaviour
     bool IsGrounded(RaycastHit2D hitInfo)
     {
         if (hitInfo == false) return true;
-        /*
-        if (hitInfo.transform.gameObject.Equals(StrongSwordSwingCollider))
-        {
-            return false;
-        }
-        */
+        bool isCollider = !hitInfo.transform.CompareTag("Collider");
         bool closeToGround = hitInfo.distance < GroundedGraceDistance;
-        return closeToGround;
+        return closeToGround && isCollider;
     }
     private void UpdateVariables()
     {
