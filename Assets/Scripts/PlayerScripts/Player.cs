@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -109,31 +110,33 @@ public class Player : MonoBehaviour
     [SerializeField] bool LookCountsAsIdle = false;
 
     //Keybinds
-    [Header("Keybinds")]
+    //[Header("Keybinds")]
     [Tooltip("Default: A")]
-    [SerializeField] KeyCode LeftKey = KeyCode.A;
+    [SerializeField] public KeyCode LeftKey { get; private set; } = KeyCode.A;
     [Tooltip("Default: D")]
-    [SerializeField] KeyCode RightKey = KeyCode.D;
+    [SerializeField] public KeyCode RightKey { get; private set; } = KeyCode.D;
     [Tooltip("Defualt: W")]
-    [SerializeField] KeyCode LookUpKey = KeyCode.W;
+    [SerializeField] public KeyCode LookUpKey { get; private set; } = KeyCode.W;
     [Tooltip("Default: S")]
-    [SerializeField] KeyCode LookDownKey = KeyCode.S;
+    [SerializeField] public KeyCode LookDownKey { get; private set; } = KeyCode.S;
     [Tooltip("Default: space")]
-    [SerializeField] KeyCode JumpKey = KeyCode.Space;
+    [SerializeField] public KeyCode JumpKey { get; private set; } = KeyCode.Space;
     [Tooltip("Default: Lshift")]
-    [SerializeField] KeyCode SprintKey = KeyCode.LeftShift;
+    [SerializeField] public KeyCode SprintKey { get; private set; } = KeyCode.LeftShift;
     [Tooltip("Default: Lctrl")]
-    [SerializeField] KeyCode DashKey = KeyCode.LeftControl;
+    [SerializeField] public KeyCode DashKey { get; private set; } = KeyCode.LeftControl;
     [Tooltip("Default: C")]
-    [SerializeField] KeyCode GlideKey = KeyCode.C;
-    [Tooltip("Default: LeftMouse (0)")]
-    [SerializeField] int AttackButton = 0;
-    [Tooltip("default: RightMouse(1)")]
-    [SerializeField] int StrongAttackButton = 1;
+    [SerializeField] public KeyCode GlideKey { get; private set; } = KeyCode.C;
+    [Tooltip("Defualt: E")]
+    [SerializeField] public KeyCode TalkToKey { get; private set; } = KeyCode.E;
+    [Tooltip("Default: Space")]
+    [SerializeField] public KeyCode ProgressDialogueKey { get; private set; } = KeyCode.Space;
 
     //Reference Objects
     [Header("Reference Objects")]
     [SerializeField] GameObject RefHotbar = null;
+    [SerializeField] public TextMeshProUGUI DialogueOutputText = null;
+    [SerializeField] public GameObject DialogueItemsObject = null;
 
     //Position changes each frame (Velocity = x, Gravity = y)
     public float Velocity { get; private set; }
@@ -169,6 +172,8 @@ public class Player : MonoBehaviour
     public bool IsLookingUp { get; private set; }
     public bool IsLookingDown { get; private set; }
     public bool IsSwordSwing { get; private set; }
+    public bool IsTalking { get; set; } //set from npcs.
+    public bool IsRestricted { get; set; }
     public List<string> HoldingObject { get; private set; }
 
     //Public cooldowns
@@ -222,7 +227,14 @@ public class Player : MonoBehaviour
         {
             Debug.LogError("No hotbar object attached to the player object");
         }
-
+        if (DialogueOutputText == null)
+        {
+            Debug.LogError("No Dialogue Output text attached to player");
+        }
+        if (DialogueItemsObject == null)
+        {
+            Debug.LogError("No DialogueItems Parent Object is attached to the player!");
+        }
     }
 
     void Update()
@@ -299,7 +311,7 @@ public class Player : MonoBehaviour
     {
 
         //Rightward movement
-        if (Input.GetKey(RightKey) && Velocity < MaxSpeed * sprintMultiplier && !IsDashing)
+        if (Input.GetKey(RightKey) && Velocity < MaxSpeed * sprintMultiplier && !IsRestricted)
         {
             //Checks if the player is turning around or accelerating from nothing
             if (Velocity < 0)
@@ -314,7 +326,7 @@ public class Player : MonoBehaviour
             RawInputDirection = 1;
         }
         //Leftward movement
-        if (Input.GetKey(LeftKey) && Velocity > -MaxSpeed * sprintMultiplier && !IsDashing)
+        if (Input.GetKey(LeftKey) && Velocity > -MaxSpeed * sprintMultiplier && !IsRestricted)
         {
             //Checks if the player is turning around or accelerating from nothing
             if (Velocity > 0)
@@ -329,7 +341,7 @@ public class Player : MonoBehaviour
             RawInputDirection = -1;
         }
         //Checks if player is not moving or if they are moving faster than they should be
-        if (((!Input.GetKey(LeftKey) && !Input.GetKey(RightKey) || Input.GetKey(LeftKey) && Input.GetKey(RightKey)) && !IsDashing))
+        if (((!Input.GetKey(LeftKey) && !Input.GetKey(RightKey) || Input.GetKey(LeftKey) && Input.GetKey(RightKey))) || IsTalking)
         {
             //Decelerates the player depenign on which way they are moving
             if (Velocity > 0)
@@ -574,14 +586,14 @@ public class Player : MonoBehaviour
     {
 
         //Checks if the player can jump
-        if (Input.GetKeyDown(JumpKey) && JumpsLeft == Jumps)
+        if (Input.GetKeyDown(JumpKey) && JumpsLeft == Jumps && !IsRestricted)
         {
             --JumpsLeft;
             Gravity = JumpHeight;
 
             IsUpwardAcceleration = true;
         }
-        else if (Input.GetKeyDown(JumpKey) && JumpsLeft > 0 && CurrentStamina > DoubleJumpStaminaCost)
+        else if (Input.GetKeyDown(JumpKey) && JumpsLeft > 0 && CurrentStamina > DoubleJumpStaminaCost && !IsRestricted)
         {
             --JumpsLeft;
             //increases jump height if the player is doing a double jump
@@ -869,5 +881,14 @@ public class Player : MonoBehaviour
 
         //Setting IsExhausted
         IsExhausted = CurrentStamina <= 0;
+
+        if (IsDashing || IsTalking)
+        {
+            IsRestricted = true;
+        }
+        else
+        {
+            IsRestricted = false;
+        }
     }
 }

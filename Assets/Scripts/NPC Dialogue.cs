@@ -7,11 +7,16 @@ using UnityEngine.UIElements;
 public class NPCDialogue : MonoBehaviour
 {
     [SerializeField] float DialogueRange = 3f;
-    [SerializeField] TextMeshProUGUI TalkText = null;
+    [SerializeField] TextMeshProUGUI BeginDialogueText = null;
     [SerializeField] List<string> DialogueText = new List<string>();
 
+    TextMeshProUGUI DialogueOutputText = null;
+    GameObject DialogueItemsParent = null;
     int timesYapped = 0;
-    string baseTalkText = "Yap";
+    KeyCode BeginYapKeybind = KeyCode.None;
+    KeyCode ProgressYapKeybind = KeyCode.None;
+    Player RefMainPlayerScript = null;
+    string baseBeginTalkToText = "Yap";
     GameObject MainPlayer = null;
     Vector2 PlayerPos;
 
@@ -25,26 +30,39 @@ public class NPCDialogue : MonoBehaviour
         {
             Debug.LogError("No player found!");
         }
-        if (TalkText == null)
+        else
+        {
+            RefMainPlayerScript = MainPlayer.GetComponent<Player>();
+            BeginYapKeybind = RefMainPlayerScript.TalkToKey;
+            DialogueOutputText = RefMainPlayerScript.DialogueOutputText;
+            ProgressYapKeybind = RefMainPlayerScript.ProgressDialogueKey;
+            DialogueItemsParent = RefMainPlayerScript.DialogueItemsObject;
+        }
+        if (BeginDialogueText == null)
         {
             Debug.LogError("No Talk Text found!");
         }
-        baseTalkText = TalkText.text;
+        else
+        {
+            baseBeginTalkToText = BeginDialogueText.text;
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
         CheckIfCanYap();
-        if (Yappable && Input.GetKeyDown(KeyCode.Space))
+        if (Yappable && !RefMainPlayerScript.IsTalking && Input.GetKeyDown(BeginYapKeybind))
         {
-            Debug.Log("Yap");
-            TalkText.SetText(DialogueText[timesYapped]);
-            timesYapped++;
-            if (timesYapped >= DialogueText.Count)
-            {
-                timesYapped = 0;
-            }
+            ProgressYap();
+        }
+        if (Yappable && RefMainPlayerScript.IsTalking && Input.GetKeyDown(ProgressYapKeybind))
+        {
+            ProgressYap();
+        }
+        if (!Yappable)
+        {
+            DialogueItemsParent.gameObject.SetActive(false);
         }
     }
 
@@ -67,14 +85,29 @@ public class NPCDialogue : MonoBehaviour
         //if player in that box
         if (SUtilities.PointInBox(PlayerPos, topLeft, bottomRight))
         {
-            TalkText.gameObject.SetActive(true);
+            BeginDialogueText.gameObject.SetActive(true);
             Yappable = true;
         }
         else
         {
-            TalkText.gameObject.SetActive(false);
+            BeginDialogueText.gameObject.SetActive(false);
             Yappable = false;
-            TalkText.SetText(baseTalkText);
+            BeginDialogueText.SetText(baseBeginTalkToText);
         }
+    }
+
+    void ProgressYap()
+    {
+        DialogueItemsParent.gameObject.SetActive(true);
+        if (timesYapped >= DialogueText.Count)
+        {
+            DialogueItemsParent.gameObject.SetActive(false);
+            RefMainPlayerScript.IsTalking = false;
+            timesYapped = 0;
+            return;
+        }
+        RefMainPlayerScript.IsTalking = true;
+        DialogueOutputText.SetText(DialogueText[timesYapped]);
+        timesYapped++;
     }
 }
